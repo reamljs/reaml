@@ -19,13 +19,13 @@ class WebApp extends BaseElement {
   }
 
   registerDefineComponents(shadow: ShadowRoot) {
-    shadow.querySelectorAll(CustomElement.DefineComponent).forEach((el) => {
-      el.parentNode?.removeChild(el);
+    shadow.querySelectorAll(CustomElement.DefineComponent).forEach((node) => {
+      node.parentNode?.removeChild(node);
       createElement(
-        <string>el.getAttribute(Attributes.Component),
+        <string>node.getAttribute(Attributes.Component),
         class extends DefineComponent {
           constructor() {
-            super(el.innerHTML);
+            super(node.innerHTML);
           }
         }
       );

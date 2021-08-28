@@ -3,9 +3,9 @@ import { CustomElement } from "@utils/const";
 
 class DefineComponent extends BaseElement {
   constructor(html: string) {
-    super(html);
-    this.render();
+    super();
     this.removeSubComponents();
+    this.render(html);
   }
 
   removeSubComponents() {

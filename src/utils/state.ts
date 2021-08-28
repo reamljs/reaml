@@ -33,7 +33,9 @@ export const initState = (
   (<any>window).states = observer(states);
 };
 
-export const updateNodeValueState = (
+export const updateVars = (
   value: string | null | never,
-  states: any
-) => (value || "").replace(Regx.state, (_, key) => getStates(states, key));
+  vars: any,
+  regx: RegExp = Regx.state
+) =>
+  (value || "").replace(regx, (_, key) => (!key ? vars : getStates(vars, key)));

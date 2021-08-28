@@ -5,39 +5,43 @@ import BaseElement from "@classes/BaseElement";
 import LoopComponent from "@classes/LoopComponent";
 
 class ForLogicComponent extends BaseElement {
-  loopKey: string;
+  key: string;
+  values: any[] = [];
+  content: string;
 
   constructor() {
     super();
-    const [, , ...loopKey] = Math.random().toString().split("");
-    this.loopKey = loopKey.join("");
-    this.rawHTML = this.innerHTML;
-    this.cleanDOM();
-    this.registerElements();
-    this.render();
+    const [, , ...key] = Math.random().toString().split("");
+    this.key = key.join("");
+    this.content = this.innerHTML;
+    this.parseArray();
+    this.registerLoopComponent();
+    this.renderFor();
   }
 
-  registerElements() {
-    this.addTraversalCallback((shadow: ShadowRoot) =>
-      this.registerLoopComponent(shadow)
-    );
+  parseArray() {
+    const each = <string>this.getAttribute("each");
+    this.values = getSafeStates(this.states, each);
   }
 
-  registerLoopComponent(shadow: ShadowRoot) {
-    const values = getSafeStates(
-      this.states,
-      <string>this.getAttribute("each")
-    );
-    createScopedElement({
-      shadow,
-      tag: `${CustomElement.LoopComponent}-${this.loopKey}`,
-      selector: CustomElement.LoopComponent,
-      elementClass: class extends LoopComponent {
-        constructor() {
-          super(values);
-        }
-      },
+  registerLoopComponent() {
+    this.addTraversalCallback((shadow: ShadowRoot) => {
+      const values = this.values;
+      createScopedElement({
+        shadow,
+        tag: `${CustomElement.LoopComponent}-${this.key}`,
+        selector: CustomElement.LoopComponent,
+        elementClass: class extends LoopComponent {
+          constructor() {
+            super(values);
+          }
+        },
+      });
     });
+  }
+
+  renderFor() {
+    this.render();
   }
 }
 

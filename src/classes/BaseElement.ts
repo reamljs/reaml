@@ -1,5 +1,5 @@
 import { findTextNode, isStateNode } from "@utils/node";
-import { initState, updateNodeValueState } from "@utils/state";
+import { initState, updateVars } from "@utils/state";
 
 type TextNodes = Map<
   ChildNode,
@@ -10,16 +10,21 @@ type TextNodes = Map<
 
 type TraversalCallback = (shadow: ShadowRoot) => void;
 
+type UpdaterCallback = (
+  text: string | null,
+  vars: any,
+  regx?: RegExp
+) => string;
+
 class BaseElement extends HTMLElement {
   traversalCallbacks: TraversalCallback[] = [];
+  updaterCallbacks: UpdaterCallback[] = [];
   states: any = (<any>window).states || {};
   shadow: ShadowRoot;
   textNodes: TextNodes = new Map();
-  rawHTML: string;
 
-  constructor(html = "") {
+  constructor() {
     super();
-    this.rawHTML = html;
     this.shadow = this.attachShadow({ mode: "closed" });
     initState(this.states, () => this.retryRender());
   }
@@ -28,11 +33,15 @@ class BaseElement extends HTMLElement {
     this.traversalCallbacks.push(fn);
   }
 
+  addUpdaterCallback(fn: UpdaterCallback) {
+    this.updaterCallbacks.push(fn);
+  }
+
   cleanDOM(isShadowRoot: boolean = false) {
     this.textNodes.clear();
 
     if (isShadowRoot) {
-      Array.from(this.shadow.children).forEach((node) => {
+      Array.from(this.shadow.childNodes).forEach((node) => {
         node.parentNode?.removeChild(node);
       });
       this.shadow.innerHTML = "";
@@ -41,31 +50,28 @@ class BaseElement extends HTMLElement {
     }
   }
 
-  setHTML(html: string) {
+  setHTML(html: string | undefined = "") {
     this.shadow.innerHTML = html;
   }
 
-  findTextNodes() {
-    const textNodes: ChildNode[] = findTextNode(this.shadow.childNodes);
-    this.shadow.querySelectorAll("*").forEach((el) => {
-      findTextNode(el.childNodes).forEach((node) => {
+  findTextNodes(self: ShadowRoot | DocumentFragment | Element = this.shadow) {
+    const textNodes: ChildNode[] = findTextNode(self.childNodes);
+    self.querySelectorAll("*").forEach((node) => {
+      findTextNode(node.childNodes).forEach((node) => {
         textNodes.push(node);
       });
     });
     return textNodes;
   }
 
-  render() {
-    const dangeriousHTML = Object.freeze({
-      __html: this.rawHTML !== "" ? this.rawHTML : this.innerHTML,
+  updateContent(value: string | null, vars: any, regx?: RegExp) {
+    this.updaterCallbacks.forEach((updateFn) => {
+      value = updateFn(value, vars, regx);
     });
-    this.cleanDOM();
-    this.setHTML(dangeriousHTML.__html);
+    return updateVars(value, vars, regx);
+  }
 
-    this.traversalCallbacks.forEach((fn) => {
-      fn(this.shadow);
-    });
-
+  renderTextNodes() {
     this.findTextNodes()
       .filter(
         (node) =>
@@ -74,8 +80,20 @@ class BaseElement extends HTMLElement {
       .forEach((node) => {
         const { textContent: origin } = node;
         this.textNodes.set(node, { origin });
-        node.nodeValue = updateNodeValueState(origin, this.states);
+        node.nodeValue = this.updateContent(origin, this.states);
       });
+  }
+
+  render(customHTML?: string) {
+    const dangeriousHTML = Object.freeze({
+      __html: customHTML || this.innerHTML,
+    });
+    this.cleanDOM();
+    this.setHTML(dangeriousHTML.__html);
+    this.traversalCallbacks.forEach((fn) => {
+      fn(this.shadow);
+    });
+    this.renderTextNodes();
   }
 
   retryRender() {
@@ -85,7 +103,7 @@ class BaseElement extends HTMLElement {
         if (!node.parentNode?.isConnected) return;
 
         const textContent = this.textNodes.get(node)?.origin ?? null;
-        const nextValue = updateNodeValueState(textContent, this.states);
+        const nextValue = this.updateContent(textContent, this.states);
         if (node.nodeValue === nextValue) return;
 
         node.nodeValue = nextValue;

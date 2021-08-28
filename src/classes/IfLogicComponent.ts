@@ -17,18 +17,18 @@ class IfLogicComponent extends BaseElement {
   value: string = "";
   cond: any = "";
   op: LogicOperator = LogicOperator.Equal;
+  content: string;
 
   constructor() {
     super();
-    this.rawHTML = this.innerHTML;
-    this.cleanDOM();
+    this.content = this.innerHTML;
     this.parseLogicOperator();
-    this.calculateLogic();
+    this.renderLogic();
   }
 
   retryRender() {
     super.retryRender();
-    this.calculateLogic();
+    this.renderLogic();
   }
 
   parseLogicOperator() {
@@ -63,7 +63,7 @@ class IfLogicComponent extends BaseElement {
     this.cond = attr[this.op];
   }
 
-  calculateLogic() {
+  renderLogic() {
     const value = getSafeStates(this.states, this.value);
     const comparator = parseValue(this.cond);
 
@@ -95,7 +95,7 @@ class IfLogicComponent extends BaseElement {
     }
 
     if (isRender) {
-      this.render();
+      this.render(this.content);
     } else {
       this.cleanDOM(true);
     }

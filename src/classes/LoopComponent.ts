@@ -1,31 +1,67 @@
 import BaseElement from "@classes/BaseElement";
+import { updateVars } from "@utils/state";
+import { Regx } from "@utils/const";
+
+type LoopItemValue = {
+  value: any;
+  index: number;
+  textNodes: ChildNode[];
+};
 
 class LoopComponent extends BaseElement {
   host: Element | null;
+  hostProps: {
+    name: string;
+    attrs: NamedNodeMap;
+  };
   values: any[];
+  content: string;
+  fragments: Map<DocumentFragment, LoopItemValue> = new Map();
 
-  constructor(values = []) {
+  constructor(values: any[] = []) {
     super();
-    this.host = this.shadow.host.parentElement;
-    if (!this.host) {
-      throw new Error(`Loop doesn't have host element.`);
-    }
+    const { parentElement } = this.shadow.host;
+    if (!parentElement) throw new Error(`Loop doesn't have host element.`);
+    this.content = this.innerHTML;
+    this.host = parentElement;
+    this.hostProps = Object.freeze({
+      name: this.host.nodeName.toLowerCase(),
+      attrs: this.host.attributes,
+    });
     this.values = values;
-    this.render();
+    this.renderLoop();
   }
 
-  render() {
-    const hostAttr = Array.from(this.host?.attributes ?? [])
-      .map(({ nodeName: key, nodeValue: value }) => `${key}="${value}"`)
-      .join(" ");
-    const hostTag = this.host?.nodeName.toLowerCase();
-    const openTag = [hostTag, hostAttr].join(" ");
-    const content = Array.from({ length: this.values.length })
-      .map((item) => this.innerHTML)
-      .join(" ");
-    this.innerHTML = `<${openTag}>${content}</${hostTag}>`;
-    this.host?.replaceWith(this);
-    super.render();
+  renderItems(element: string, attributes: NamedNodeMap) {
+    const hostElement = document.createElement(element.toLowerCase());
+    Array.from(attributes).forEach(({ nodeName, nodeValue }) =>
+      hostElement.setAttribute(nodeName, nodeValue || nodeName)
+    );
+
+    this.values.forEach((value, index) => {
+      const template = document.createElement("template");
+      const content = this.content.replace(
+        Regx.singleItem,
+        (m) => `${m}[${index}]`
+      );
+      template.innerHTML = updateVars(content, value, Regx.item);
+      hostElement.appendChild(template.content);
+    });
+
+    this.render(hostElement.innerHTML);
+  }
+
+  renderLoop() {
+    this.cleanDOM();
+    if (!this.host) return;
+    this.host.replaceWith(this);
+    this.renderItems(this.hostProps.name, this.hostProps.attrs);
+  }
+
+  retryRender() {
+    // this.renderItems(this.hostProps.name, this.hostProps.attrs);
+    super.retryRender();
+    // console.log(this.values);
   }
 }
 
