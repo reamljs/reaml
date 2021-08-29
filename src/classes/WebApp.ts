@@ -1,52 +1,75 @@
+import { CustomElement, EventTypes, Attributes } from "@utils/const";
 import { createElement, createScopedElement } from "@utils/node";
+import { createStates } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
+import StatesComponent from "@classes/StatesComponent";
 import IfLogicComponent from "@classes/IfLogicComponent";
-import ForLogicComponent from "@classes/ForLogicComponent";
-import { CustomElement, Attributes } from "@utils/const";
 
 class WebApp extends BaseElement {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.mount();
+    this.createGlobalStates();
     this.registerElements();
-    this.render();
+  }
+
+  createGlobalStates() {
+    const event = new CustomEvent(EventTypes.StatesUpdate, {
+      detail: {
+        time: Date.now(),
+      },
+    });
+
+    (<any>window).states = createStates((<any>window).states, () => {
+      document.dispatchEvent(event);
+    });
   }
 
   registerElements() {
-    this.addTraversalCallback(this.registerDefineComponents);
-    this.addTraversalCallback(this.registerIfLogicComponents);
-    this.addTraversalCallback(this.registerForLogicComponents);
+    this.registerScopedComponents();
+    this.registerDefinesComponent();
   }
 
-  registerDefineComponents(shadow: ShadowRoot) {
-    shadow.querySelectorAll(CustomElement.DefineComponent).forEach((node) => {
-      node.parentNode?.removeChild(node);
+  registerDefinesComponent() {
+    const cleanupDOM = (node: Element) => {
+      node.innerHTML = "";
+      node.remove();
+    };
+
+    const getDefineElement = (element: ShadowRoot | Element) =>
+      element.querySelectorAll(CustomElement.DefineComponent);
+
+    getDefineElement(this.shadow).forEach((element) => {
+      const { innerHTML: html, attributes } = element;
+      getDefineElement(element).forEach(cleanupDOM);
       createElement(
-        <string>node.getAttribute(Attributes.Component),
+        <string>element.getAttribute(Attributes.Component),
         class extends DefineComponent {
           constructor() {
-            super(node.innerHTML);
+            super(html, attributes);
           }
         }
       );
+      cleanupDOM(element);
     });
   }
 
-  registerIfLogicComponents(shadow: ShadowRoot) {
-    createScopedElement({
-      shadow,
-      tag: `${CustomElement.IfLogicComponent}-${Attributes.Component}`,
-      selector: CustomElement.IfLogicComponent,
-      elementClass: IfLogicComponent,
-    });
-  }
-
-  registerForLogicComponents(shadow: ShadowRoot) {
-    createScopedElement({
-      shadow,
-      tag: `${CustomElement.ForLogicComponent}-${Attributes.Component}`,
-      selector: CustomElement.ForLogicComponent,
-      elementClass: ForLogicComponent,
+  registerScopedComponents() {
+    (<[string, CustomElementConstructor][]>[
+      [CustomElement.StatesComponent, StatesComponent],
+      [CustomElement.IfLogicComponent, IfLogicComponent],
+    ]).forEach(([selector, elementClass]) => {
+      createScopedElement({
+        selector,
+        elementClass,
+        tag: `${selector}-${Attributes.Component}`,
+        shadow: this.shadow,
+      });
     });
   }
 }

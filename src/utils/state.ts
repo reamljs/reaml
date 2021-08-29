@@ -1,21 +1,48 @@
-import get from "lodash/get";
 import { Regx } from "@utils/const";
 
-export const getStates = (states: any, path: string) => get(states, path);
+const baseGet = (obj: any, path: string, defaultValue = undefined) => {
+  const travel = (regexp: RegExp) =>
+    String.prototype.split
+      .call(path, regexp)
+      .filter(Boolean)
+      .reduce(
+        (res, key) => (res !== null && res !== undefined ? res[key] : res),
+        obj
+      );
+  const result = travel(/[,[\]]+?/) || travel(/[,[\].]+?/);
+  return result === undefined || result === obj ? defaultValue : result;
+};
+
+export const getStates = (states: any, path: string) => baseGet(states, path);
 
 export const getSafeStates = (states: any, path: string) =>
-  get(Object.freeze({ states }), path);
+  baseGet(Object.freeze({ states }), path);
 
-export const initState = (
+export const getSafeGlobalStates = (path: string) => {
+  const states = Object.freeze({ states: (<any>window).states });
+  return !path ? states : baseGet(states, path);
+};
+
+export const getGlobalStates = (path: string) => {
+  const states = (<any>window).states;
+  return !path ? states : baseGet(states, path);
+};
+
+export const getGlobalStatesDefault = (path: string) => {
+  const value = getSafeGlobalStates(path);
+  return value !== null ? value : path;
+};
+
+export const createStates = (
   states: any,
   onChange: (key: string, value: any) => void = () => {}
 ) => {
-  const observer = (states: any) => {
+  const createObserver = (states: any) => {
     const validator = {
       get: (target: any, key: string) => {
         let value = target[key];
         if (typeof value === "object" && !Array.isArray(value)) {
-          value = observer(value);
+          value = createObserver(value);
         }
         return value;
       },
@@ -30,7 +57,7 @@ export const initState = (
     return new Proxy(states, validator);
   };
 
-  (<any>window).states = observer(states);
+  return createObserver(states);
 };
 
 export const updateVars = (

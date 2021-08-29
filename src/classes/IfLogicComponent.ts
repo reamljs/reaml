@@ -1,7 +1,5 @@
-import isNil from "lodash/isNil";
-
 import BaseElement from "@classes/BaseElement";
-import { getSafeStates } from "@utils/state";
+import { getSafeGlobalStates } from "@utils/state";
 import { parseValue } from "@utils/data";
 
 enum LogicOperator {
@@ -13,6 +11,8 @@ enum LogicOperator {
   LessThanOrEqual = "lte",
 }
 
+const STYLE_RENDERER_ID = "renderer";
+
 class IfLogicComponent extends BaseElement {
   value: string = "";
   cond: any = "";
@@ -22,83 +22,85 @@ class IfLogicComponent extends BaseElement {
   constructor() {
     super();
     this.content = this.innerHTML;
-    this.parseLogicOperator();
-    this.renderLogic();
   }
 
-  retryRender() {
-    super.retryRender();
-    this.renderLogic();
+  connectedCallback() {
+    this.initLogic();
+    this.addStatesObserver(() => {
+      this.renderLogic();
+    });
+    super.connectedCallback();
+    this.mount();
   }
 
-  parseLogicOperator() {
-    const attr = {
-      value: <string>this.getAttribute("value"),
-      [LogicOperator.Equal]: <string>this.getAttribute(LogicOperator.Equal),
-      [LogicOperator.NotEqual]: <string>(
-        this.getAttribute(LogicOperator.NotEqual)
-      ),
-      [LogicOperator.GreaterThan]: <string>(
-        this.getAttribute(LogicOperator.GreaterThan)
-      ),
-      [LogicOperator.GreaterThanOrEqual]: <string>(
-        this.getAttribute(LogicOperator.GreaterThanOrEqual)
-      ),
-      [LogicOperator.LessThan]: <string>(
-        this.getAttribute(LogicOperator.LessThan)
-      ),
-      [LogicOperator.LessThanOrEqual]: <string>(
-        this.getAttribute(LogicOperator.LessThanOrEqual)
-      ),
-    };
-
-    if (!isNil(attr.eq)) this.op = LogicOperator.Equal;
-    if (!isNil(attr.not)) this.op = LogicOperator.NotEqual;
-    if (!isNil(attr.gt)) this.op = LogicOperator.GreaterThan;
-    if (!isNil(attr.gte)) this.op = LogicOperator.GreaterThanOrEqual;
-    if (!isNil(attr.lt)) this.op = LogicOperator.LessThan;
-    if (!isNil(attr.lte)) this.op = LogicOperator.LessThanOrEqual;
-
-    this.value = attr.value;
-    this.cond = attr[this.op];
+  initLogic() {
+    this.value = <string>this.getAttribute("value");
+    [
+      LogicOperator.Equal,
+      LogicOperator.NotEqual,
+      LogicOperator.GreaterThan,
+      LogicOperator.GreaterThanOrEqual,
+      LogicOperator.LessThan,
+      LogicOperator.LessThanOrEqual,
+    ].forEach((op) => {
+      const value = <string>this.getAttribute(op);
+      if (value !== null) {
+        this.op = op;
+        this.cond = value;
+      }
+    });
   }
 
   renderLogic() {
-    const value = getSafeStates(this.states, this.value);
+    const value = getSafeGlobalStates(this.value);
     const comparator = parseValue(this.cond);
-
-    let isRender = false;
-    switch (this.op) {
-      case LogicOperator.Equal:
-        isRender = value === comparator;
-        break;
-
-      case LogicOperator.NotEqual:
-        isRender = value !== comparator;
-        break;
-
-      case LogicOperator.LessThan:
-        isRender = value < comparator;
-        break;
-
-      case LogicOperator.LessThanOrEqual:
-        isRender = value <= comparator;
-        break;
-
-      case LogicOperator.GreaterThan:
-        isRender = value > comparator;
-        break;
-
-      case LogicOperator.GreaterThanOrEqual:
-        isRender = value >= comparator;
-        break;
-    }
+    const isRender = [
+      [LogicOperator.Equal, value === comparator],
+      [LogicOperator.NotEqual, value !== comparator],
+      [LogicOperator.LessThan, value < comparator],
+      [LogicOperator.LessThanOrEqual, value <= comparator],
+      [LogicOperator.GreaterThan, value > comparator],
+      [LogicOperator.GreaterThanOrEqual, value >= comparator],
+    ]
+      .map(([op, isValid]) => this.op === op && isValid)
+      .some((isTrue) => isTrue);
 
     if (isRender) {
-      this.render(this.content);
+      this.showContent();
     } else {
-      this.cleanDOM(true);
+      this.hideContent();
     }
+  }
+
+  getStyletag() {
+    return this.shadow.getElementById(STYLE_RENDERER_ID);
+  }
+
+  overridesStyles(content: string = "") {
+    const style = this.getStyletag();
+    if (style) style.innerHTML = content;
+  }
+
+  showContent() {
+    this.overridesStyles();
+  }
+
+  hideContent() {
+    this.overridesStyles(":host{display:none}");
+  }
+
+  addStylesheet() {
+    const style = document.createElement("style");
+    style.id = STYLE_RENDERER_ID;
+    this.shadow.insertBefore(style, this.shadow.firstChild);
+    this.hideContent();
+  }
+
+  mount() {
+    this.render(this.content);
+    this.addStylesheet();
+    this.renderLogic();
+    this.clean();
   }
 }
 

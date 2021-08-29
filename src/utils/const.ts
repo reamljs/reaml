@@ -8,10 +8,16 @@ export const Regx = {
 
 export enum Attributes {
   Component = "component",
+  PropsPrefix = "props:",
+}
+
+export enum EventTypes {
+  StatesUpdate = "states-update",
 }
 
 export enum CustomElement {
   Main = "web-app",
+  StatesComponent = "states",
   DefineComponent = "define",
   ImportComponent = "import",
   IfLogicComponent = "if",
