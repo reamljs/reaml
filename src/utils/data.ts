@@ -11,3 +11,5 @@ export const randomNumber = () => {
   const [, , ...num] = Math.random().toString().split("");
   return num.join("");
 };
+
+export const createArray = <T>(any: any): T[] => Array.from(any);

@@ -1,12 +1,13 @@
 import { EventTypes, Attributes } from "@utils/const";
-import { createElement } from "@utils/node";
+import { createElement, getAttributes } from "@utils/node";
+import { createArray } from "@utils/data";
 
 type StatesObserverCallback = () => void;
 
 class BaseElement extends HTMLElement {
   shadow: ShadowRoot;
   statesName: string = Attributes.States;
-  oberverCallbacks: StatesObserverCallback[] = [];
+  observerFn: StatesObserverCallback[] = [];
 
   constructor(statesName?: string) {
     super();
@@ -44,12 +45,12 @@ class BaseElement extends HTMLElement {
   }
 
   addStatesObserver(fn: StatesObserverCallback) {
-    this.oberverCallbacks.push(fn);
+    this.observerFn.push(fn);
   }
 
   connectStatesObserver() {
     document.addEventListener(EventTypes.StatesUpdate, () => {
-      for (const fn of this.oberverCallbacks) {
+      for (const fn of this.observerFn) {
         fn();
       }
     });
@@ -68,12 +69,14 @@ class BaseElement extends HTMLElement {
   }) {
     this.shadow.querySelectorAll(selector).forEach((node) => {
       const element = document.createElement(tag);
-      Array.from(node.attributes).forEach((attr) =>
-        element.setAttribute(
-          attr.nodeName,
-          attr.nodeValue ? attr.nodeValue : attr.nodeName
-        )
-      );
+      createArray<Attr>(getAttributes(node)).forEach((attr) => {
+        const nodeName = this.getNodeName(attr);
+        const nodeValue = this.getNodeValue(attr);
+        return element.setAttribute(
+          this.getNodeName(attr),
+          nodeValue ? nodeValue : nodeName
+        );
+      });
       this.setHTML(this.getHTML(node), element);
       node.parentNode?.replaceChild(element, node);
       node.parentNode?.removeChild(node);
@@ -102,6 +105,14 @@ class BaseElement extends HTMLElement {
 
   setHTML(content: string, element?: Element | ShadowRoot) {
     (element || this).innerHTML = content;
+  }
+
+  getNodeName(node: Node | Attr) {
+    return node.nodeName;
+  }
+
+  getNodeValue(node: Node | Attr) {
+    return node.nodeValue;
   }
 }
 

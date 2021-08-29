@@ -26,17 +26,11 @@ class StatesComponent extends BaseElement {
   render() {
     let value = getGlobalStates(this.statesName, this.initialValue);
     if (value === undefined) return;
-
-    switch (this.renderAs) {
-      case "json":
-        value = JSON.stringify(value, null, 2);
-        break;
-
-      default:
-        if (this.renderAs) {
-          value = (<any>window)[this.renderAs](value);
-        }
-        break;
+    if (this.renderAs) {
+      value =
+        this.renderAs === "json"
+          ? JSON.stringify(value, null, 2)
+          : (<any>window)[this.renderAs](value);
     }
 
     const textNode = document.createTextNode(value);

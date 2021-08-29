@@ -28,7 +28,7 @@ module.exports = defineConfig({
         properties: {
           builtins: true,
           regex:
-            /Component|PropsPrefix|States|StatesUpdate|Main|StatesComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|statesName|mount|render|clean|cleanShadow|addStatesObserver|connectStatesObserver|getHost|content|defaultProps|props|applyProps|updateProps|cleanUglyProps|getOriginStatesName|createGlobalStates|registerElements|getProps|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|attrValue|cond|op|initLogic|renderLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|initialValue|renderAs|parseRenderer|selector|elementClass|tag|args|shadow|getAttrVal|getHTML|setHTML/,
+            /Component|PropsPrefix|States|StatesUpdate|Main|StatesComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|statesName|mount|render|clean|cleanShadow|addStatesObserver|connectStatesObserver|getHost|content|defaultProps|props|applyProps|updateProps|cleanUglyProps|getOriginStatesName|createGlobalStates|registerElements|getProps|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|attrValue|cond|op|initLogic|renderLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|initialValue|renderAs|parseRenderer|selector|elementClass|tag|args|shadow|getAttrVal|getHTML|setHTML|getNodeName|getNodeValue/,
         },
       },
     },

@@ -1,5 +1,5 @@
 import { CustomElement, EventTypes, Attributes } from "@utils/const";
-import { createElement } from "@utils/node";
+import { createElement, getAttributes } from "@utils/node";
 import { createStates } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
@@ -53,7 +53,7 @@ class WebApp extends BaseElement {
     const statesName = this.statesName;
 
     getDefineElement(this.shadow).forEach((element) => {
-      const { attributes } = element;
+      const attributes = getAttributes(element);
       const html = this.getHTML(element);
       getDefineElement(element).forEach(cleanupDOM);
       createElement(

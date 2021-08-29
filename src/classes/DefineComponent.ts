@@ -1,5 +1,7 @@
 import BaseElement from "@classes/BaseElement";
 import { Attributes } from "@utils/const";
+import { getAttributes } from "@utils/node";
+import { createArray } from "@utils/data";
 import { getGlobalStatesDefault } from "@utils/state";
 
 class DefineComponent extends BaseElement {
@@ -10,7 +12,7 @@ class DefineComponent extends BaseElement {
   constructor(statesName: string, html: string, attrs: NamedNodeMap) {
     super(statesName);
     this.defaultProps = this.getProps(attrs);
-    this.props = this.getProps(this.attributes);
+    this.props = this.getProps(getAttributes(this));
     this.content = html;
   }
 
@@ -44,8 +46,8 @@ class DefineComponent extends BaseElement {
   }
 
   cleanUglyProps() {
-    for (const attr of Array.from(this.attributes)) {
-      this.removeAttribute(attr.nodeName);
+    for (const attr of createArray<Attr>(getAttributes(this))) {
+      this.removeAttribute(this.getNodeName(attr));
     }
   }
 
@@ -53,14 +55,15 @@ class DefineComponent extends BaseElement {
     const camelRegx = /[^a-zA-Z0-9]+(.)/g;
     const props = new Map<string, any>();
     const replaceCallback = (_: any, chr: string) => chr.toUpperCase();
-    for (const attr of Array.from(attributes)) {
-      if (attr.nodeName === Attributes.Component) return;
-      if (attr.nodeName.includes(Attributes.PropsPrefix)) {
-        const [, propName] = attr.nodeName.split(":");
+    for (const attr of createArray<Attr>(attributes)) {
+      const nodeName = this.getNodeName(attr);
+      if (nodeName === Attributes.Component) return;
+      if (nodeName.includes(Attributes.PropsPrefix)) {
+        const [, propName] = nodeName.split(":");
         const camelcase = propName
           .toLowerCase()
           .replace(camelRegx, replaceCallback);
-        props.set(camelcase, attr.nodeValue);
+        props.set(camelcase, this.getNodeValue(attr));
       }
     }
     return props;
