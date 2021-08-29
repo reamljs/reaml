@@ -9,6 +9,7 @@ export const Regx = {
 export enum Attributes {
   Component = "component",
   PropsPrefix = "props:",
+  States = "states",
 }
 
 export enum EventTypes {

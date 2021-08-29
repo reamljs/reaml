@@ -7,8 +7,8 @@ class DefineComponent extends BaseElement {
   defaultProps: Map<string, any> | undefined = new Map();
   props: Map<string, any> | undefined = new Map();
 
-  constructor(html: string, attrs: NamedNodeMap) {
-    super();
+  constructor(statesName: string, html: string, attrs: NamedNodeMap) {
+    super(statesName);
     this.defaultProps = this.getProps(attrs);
     this.props = this.getProps(this.attributes);
     this.content = html;
@@ -32,6 +32,7 @@ class DefineComponent extends BaseElement {
     if (!this.props) return;
     this.props.forEach((value, key) => {
       const nextValue = `${getGlobalStatesDefault(
+        this.statesName,
         this.defaultProps?.get(key) ?? value
       )}`;
       const prevValue = this.dataset[key];
@@ -51,13 +52,14 @@ class DefineComponent extends BaseElement {
   getProps(attributes: NamedNodeMap) {
     const camelRegx = /[^a-zA-Z0-9]+(.)/g;
     const props = new Map<string, any>();
+    const replaceCallback = (_: any, chr: string) => chr.toUpperCase();
     for (const attr of Array.from(attributes)) {
       if (attr.nodeName === Attributes.Component) return;
       if (attr.nodeName.includes(Attributes.PropsPrefix)) {
         const [, propName] = attr.nodeName.split(":");
         const camelcase = propName
           .toLowerCase()
-          .replace(camelRegx, (m, chr) => chr.toUpperCase());
+          .replace(camelRegx, replaceCallback);
         props.set(camelcase, attr.nodeValue);
       }
     }

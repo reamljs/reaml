@@ -14,14 +14,14 @@ enum LogicOperator {
 const STYLE_RENDERER_ID = "renderer";
 
 class IfLogicComponent extends BaseElement {
-  value: string = "";
+  attrValue: string = "";
   cond: any = "";
   op: LogicOperator = LogicOperator.Equal;
   content: string;
 
-  constructor() {
-    super();
-    this.content = this.innerHTML;
+  constructor(statesName: string) {
+    super(statesName);
+    this.content = this.getHTML();
   }
 
   connectedCallback() {
@@ -34,7 +34,7 @@ class IfLogicComponent extends BaseElement {
   }
 
   initLogic() {
-    this.value = <string>this.getAttribute("value");
+    this.attrValue = <string>this.getAttrVal("value");
     [
       LogicOperator.Equal,
       LogicOperator.NotEqual,
@@ -43,7 +43,7 @@ class IfLogicComponent extends BaseElement {
       LogicOperator.LessThan,
       LogicOperator.LessThanOrEqual,
     ].forEach((op) => {
-      const value = <string>this.getAttribute(op);
+      const value = <string>this.getAttrVal(op);
       if (value !== null) {
         this.op = op;
         this.cond = value;
@@ -52,7 +52,7 @@ class IfLogicComponent extends BaseElement {
   }
 
   renderLogic() {
-    const value = getSafeGlobalStates(this.value);
+    const value = getSafeGlobalStates(this.statesName, this.attrValue);
     const comparator = parseValue(this.cond);
     const isRender = [
       [LogicOperator.Equal, value === comparator],
@@ -78,7 +78,7 @@ class IfLogicComponent extends BaseElement {
 
   overridesStyles(content: string = "") {
     const style = this.getStyletag();
-    if (style) style.innerHTML = content;
+    if (style) this.setHTML(content, style);
   }
 
   showContent() {

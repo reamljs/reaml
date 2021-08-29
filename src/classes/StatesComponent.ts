@@ -1,14 +1,13 @@
 import { getGlobalStates } from "@utils/state";
-import { EventTypes } from "@utils/const";
 import BaseElement from "@classes/BaseElement";
 
 class StatesComponent extends BaseElement {
   initialValue: string;
   renderAs: string | undefined = undefined;
 
-  constructor() {
-    super();
-    this.initialValue = this.innerHTML;
+  constructor(statesName: string) {
+    super(statesName);
+    this.initialValue = this.getHTML();
   }
 
   connectedCallback() {
@@ -21,11 +20,11 @@ class StatesComponent extends BaseElement {
   }
 
   parseRenderer() {
-    this.renderAs = <string>this.getAttribute("as");
+    this.renderAs = <string>this.getAttrVal("as");
   }
 
   render() {
-    let value = getGlobalStates(this.initialValue);
+    let value = getGlobalStates(this.statesName, this.initialValue);
     if (value === undefined) return;
 
     switch (this.renderAs) {

@@ -1,5 +1,5 @@
 import { CustomElement, EventTypes, Attributes } from "@utils/const";
-import { createElement, createScopedElement } from "@utils/node";
+import { createElement } from "@utils/node";
 import { createStates } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
@@ -9,6 +9,7 @@ import IfLogicComponent from "@classes/IfLogicComponent";
 class WebApp extends BaseElement {
   constructor() {
     super();
+    this.setStatesName(this.getOriginStatesName());
   }
 
   connectedCallback() {
@@ -18,6 +19,10 @@ class WebApp extends BaseElement {
     this.registerElements();
   }
 
+  getOriginStatesName() {
+    return <string>this.getAttrVal(Attributes.States);
+  }
+
   createGlobalStates() {
     const event = new CustomEvent(EventTypes.StatesUpdate, {
       detail: {
@@ -25,7 +30,8 @@ class WebApp extends BaseElement {
       },
     });
 
-    (<any>window).states = createStates((<any>window).states, () => {
+    const statesName = this.getOriginStatesName();
+    (<any>window)[statesName] = createStates((<any>window)[statesName], () => {
       document.dispatchEvent(event);
     });
   }
@@ -37,21 +43,24 @@ class WebApp extends BaseElement {
 
   registerDefinesComponent() {
     const cleanupDOM = (node: Element) => {
-      node.innerHTML = "";
+      this.setHTML("", node);
       node.remove();
     };
 
     const getDefineElement = (element: ShadowRoot | Element) =>
       element.querySelectorAll(CustomElement.DefineComponent);
 
+    const statesName = this.statesName;
+
     getDefineElement(this.shadow).forEach((element) => {
-      const { innerHTML: html, attributes } = element;
+      const { attributes } = element;
+      const html = this.getHTML(element);
       getDefineElement(element).forEach(cleanupDOM);
       createElement(
-        <string>element.getAttribute(Attributes.Component),
+        <string>this.getAttrVal(Attributes.Component, element),
         class extends DefineComponent {
           constructor() {
-            super(html, attributes);
+            super(statesName, html, attributes);
           }
         }
       );
@@ -64,11 +73,11 @@ class WebApp extends BaseElement {
       [CustomElement.StatesComponent, StatesComponent],
       [CustomElement.IfLogicComponent, IfLogicComponent],
     ]).forEach(([selector, elementClass]) => {
-      createScopedElement({
+      this.createScopedElement({
         selector,
         elementClass,
         tag: `${selector}-${Attributes.Component}`,
-        shadow: this.shadow,
+        args: this.statesName,
       });
     });
   }

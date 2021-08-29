@@ -6,3 +6,8 @@ export const parseValue = (value: any) => {
   const isNonString = isNumber || isBoolean || isNull || isUndefined;
   return JSON.parse(isNonString ? value : `${value}`);
 };
+
+export const randomNumber = () => {
+  const [, , ...num] = Math.random().toString().split("");
+  return num.join("");
+};

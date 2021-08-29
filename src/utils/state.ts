@@ -18,23 +18,25 @@ export const getStates = (states: any, path: string) => baseGet(states, path);
 export const getSafeStates = (states: any, path: string) =>
   baseGet(Object.freeze({ states }), path);
 
-export const getSafeGlobalStates = (path: string) => {
-  const states = Object.freeze({ states: (<any>window).states });
+export const getSafeGlobalStates = (statesName: string, path: string) => {
+  const states = Object.freeze({
+    [statesName]: (<any>window)[statesName],
+  });
   return !path ? states : baseGet(states, path);
 };
 
-export const getGlobalStates = (path: string) => {
-  const states = (<any>window).states;
+export const getGlobalStates = (statesName: string, path: string) => {
+  const states = (<any>window)[statesName];
   return !path ? states : baseGet(states, path);
 };
 
-export const getGlobalStatesDefault = (path: string) => {
-  const value = getSafeGlobalStates(path);
+export const getGlobalStatesDefault = (statesName: string, path: string) => {
+  const value = getSafeGlobalStates(statesName, path);
   return value !== null ? value : path;
 };
 
 export const createStates = (
-  states: any,
+  origin: any,
   onChange: (key: string, value: any) => void = () => {}
 ) => {
   const createObserver = (states: any) => {
@@ -57,7 +59,7 @@ export const createStates = (
     return new Proxy(states, validator);
   };
 
-  return createObserver(states);
+  return createObserver(origin);
 };
 
 export const updateVars = (

@@ -12,29 +12,3 @@ export const createElement = (
 ) => {
   customElements.define(name, elementClass);
 };
-
-export const createScopedElement = ({
-  shadow,
-  tag,
-  selector,
-  elementClass,
-}: {
-  shadow: ShadowRoot;
-  tag: string;
-  selector: string;
-  elementClass: CustomElementConstructor;
-}) => {
-  shadow.querySelectorAll(selector).forEach((node) => {
-    const element = document.createElement(tag);
-    Array.from(node.attributes).forEach((attr) =>
-      element.setAttribute(
-        attr.nodeName,
-        attr.nodeValue ? attr.nodeValue : attr.nodeName
-      )
-    );
-    element.innerHTML = node.innerHTML;
-    node.parentNode?.replaceChild(element, node);
-    node.parentNode?.removeChild(node);
-  });
-  createElement(tag, elementClass);
-};
