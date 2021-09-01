@@ -1,5 +1,3 @@
-import { Regx } from "@utils/const";
-
 const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   const travel = (regexp: RegExp) =>
     String.prototype.split
@@ -32,10 +30,10 @@ export const getGlobalStates = (statesName: string, path: string) => {
 
 export const getGlobalStatesDefault = (statesName: string, path: string) => {
   const value = getSafeGlobalStates(statesName, path);
-  return value !== null ? value : path;
+  return ![null, undefined].includes(value) ? value : path;
 };
 
-const createObserver = (
+export const createObserver = (
   states: any,
   onChange: (key: string, value: any) => void = () => {}
 ) => {
@@ -57,15 +55,3 @@ const createObserver = (
 
   return new Proxy(states, validator);
 };
-
-export const createStates = (
-  states: any,
-  onChange: (key: string, value: any) => void = () => {}
-) => createObserver(states, onChange);
-
-export const updateVars = (
-  value: string | null | never,
-  vars: any,
-  regx: RegExp = Regx.state
-) =>
-  (value || "").replace(regx, (_, key) => (!key ? vars : getStates(vars, key)));

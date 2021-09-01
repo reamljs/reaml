@@ -7,6 +7,7 @@ import {
   setHTML,
   getHTML,
   cleanHTML,
+  querySelectorAll,
 } from "@utils/node";
 import { createArray } from "@utils/data";
 
@@ -19,13 +20,14 @@ class BaseElement extends HTMLElement {
     eventTypes: EventTypes,
     callback: ObserverCallback,
     target?: EventTarget
-  ][] = [];
+  ][];
 
   constructor(statesName?: string) {
     super();
     if (statesName) {
       this.setStatesName(statesName);
     }
+    this.observers = [];
     this.shadow = this.attachShadow({ mode: "closed" });
   }
 
@@ -83,7 +85,7 @@ class BaseElement extends HTMLElement {
     elementClass: CustomElementConstructor;
     args?: any;
   }) {
-    this.shadow.querySelectorAll(selector).forEach((node) => {
+    querySelectorAll(this.shadow, selector).forEach((node) => {
       const element = document.createElement(tag);
       createArray<Attr>(getAttrList(node)).forEach((attr) => {
         const nodeName = getNodeName(attr);

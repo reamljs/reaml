@@ -5,8 +5,9 @@ import {
   getAttr,
   getHTML,
   cleanHTML,
+  querySelectorAll,
 } from "@utils/node";
-import { createStates } from "@utils/state";
+import { createObserver } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
 import StatesComponent from "@classes/StatesComponent";
@@ -21,7 +22,7 @@ class WebApp extends BaseElement {
   connectedCallback() {
     super.connectedCallback();
     this.mount();
-    this.createGlobalStates();
+    this.createObservableStates();
     this.registerElements();
   }
 
@@ -29,17 +30,12 @@ class WebApp extends BaseElement {
     return getAttr(this, Attributes.States);
   }
 
-  createGlobalStates() {
-    const event = new CustomEvent(EventTypes.StatesUpdate, {
-      detail: {
-        time: Date.now(),
-      },
-    });
-
+  createObservableStates() {
+    const event = new CustomEvent(EventTypes.StatesUpdate);
     const statesName = this.getOriginStatesName();
-    (<any>window)[statesName] = createStates((<any>window)[statesName], () => {
-      document.dispatchEvent(event);
-    });
+    (<any>window)[statesName] = createObserver((<any>window)[statesName], () =>
+      document.dispatchEvent(event)
+    );
   }
 
   registerElements() {
@@ -54,7 +50,7 @@ class WebApp extends BaseElement {
     };
 
     const getDefineElement = (element: ShadowRoot | Element) =>
-      element.querySelectorAll(CustomElement.DefineComponent);
+      querySelectorAll(element, CustomElement.DefineComponent);
 
     const statesName = this.statesName;
 

@@ -1,12 +1,3 @@
-import { Regx } from "@utils/const";
-import { createArray } from "@utils/data";
-
-export const findTextNode = (nodes: NodeListOf<ChildNode>) =>
-  createArray<ChildNode>(nodes).filter((el) => el.nodeType === Node.TEXT_NODE);
-
-export const isStateNode = (value?: string | undefined | null) =>
-  value && value.match(Regx.vars);
-
 export const createElement = (
   name: string,
   elementClass: CustomElementConstructor
@@ -33,3 +24,8 @@ export const setHTML = (
 };
 
 export const cleanHTML = (element: Element | ShadowRoot) => setHTML(element);
+
+export const querySelectorAll = (
+  element: Element | ShadowRoot,
+  selector: string
+) => element.querySelectorAll(selector);
