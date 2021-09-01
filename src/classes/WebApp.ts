@@ -1,5 +1,11 @@
 import { CustomElement, EventTypes, Attributes } from "@utils/const";
-import { createElement, getAttributes } from "@utils/node";
+import {
+  createElement,
+  getAttrList,
+  getAttr,
+  getHTML,
+  cleanHTML,
+} from "@utils/node";
 import { createStates } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
@@ -20,7 +26,7 @@ class WebApp extends BaseElement {
   }
 
   getOriginStatesName() {
-    return <string>this.getAttrVal(Attributes.States);
+    return getAttr(this, Attributes.States);
   }
 
   createGlobalStates() {
@@ -43,7 +49,7 @@ class WebApp extends BaseElement {
 
   registerDefinesComponent() {
     const cleanupDOM = (node: Element) => {
-      this.setHTML("", node);
+      cleanHTML(node);
       node.remove();
     };
 
@@ -53,11 +59,11 @@ class WebApp extends BaseElement {
     const statesName = this.statesName;
 
     getDefineElement(this.shadow).forEach((element) => {
-      const attributes = getAttributes(element);
-      const html = this.getHTML(element);
+      const attributes = getAttrList(element);
+      const html = getHTML(element);
       getDefineElement(element).forEach(cleanupDOM);
       createElement(
-        <string>this.getAttrVal(Attributes.Component, element),
+        getAttr(element, Attributes.Component),
         class extends DefineComponent {
           constructor() {
             super(statesName, html, attributes);

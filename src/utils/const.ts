@@ -13,7 +13,8 @@ export enum Attributes {
 }
 
 export enum EventTypes {
-  StatesUpdate = "states-update",
+  StatesUpdate = "states",
+  PropsUpdate = "props",
 }
 
 export enum CustomElement {

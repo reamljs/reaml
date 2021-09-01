@@ -1,6 +1,8 @@
 import BaseElement from "@classes/BaseElement";
+import { EventTypes } from "@utils/const";
 import { getSafeGlobalStates } from "@utils/state";
 import { parseValue } from "@utils/data";
+import { setHTML, getHTML, getAttr } from "@utils/node";
 
 enum LogicOperator {
   Equal = "eq",
@@ -21,20 +23,18 @@ class IfLogicComponent extends BaseElement {
 
   constructor(statesName: string) {
     super(statesName);
-    this.content = this.getHTML();
+    this.content = getHTML(this);
   }
 
   connectedCallback() {
     this.initLogic();
-    this.addStatesObserver(() => {
-      this.renderLogic();
-    });
+    this.addVarsObserver(EventTypes.StatesUpdate, () => this.renderLogic());
     super.connectedCallback();
     this.mount();
   }
 
   initLogic() {
-    this.attrValue = <string>this.getAttrVal("value");
+    this.attrValue = getAttr(this, "value");
     [
       LogicOperator.Equal,
       LogicOperator.NotEqual,
@@ -43,8 +43,8 @@ class IfLogicComponent extends BaseElement {
       LogicOperator.LessThan,
       LogicOperator.LessThanOrEqual,
     ].forEach((op) => {
-      const value = <string>this.getAttrVal(op);
-      if (value !== null) {
+      const value = getAttr(this, op);
+      if (value !== "") {
         this.op = op;
         this.cond = value;
       }
@@ -78,7 +78,7 @@ class IfLogicComponent extends BaseElement {
 
   overridesStyles(content: string = "") {
     const style = this.getStyletag();
-    if (style) this.setHTML(content, style);
+    if (style) setHTML(style, content);
   }
 
   showContent() {

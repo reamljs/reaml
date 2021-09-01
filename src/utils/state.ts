@@ -35,32 +35,33 @@ export const getGlobalStatesDefault = (statesName: string, path: string) => {
   return value !== null ? value : path;
 };
 
-export const createStates = (
-  origin: any,
+const createObserver = (
+  states: any,
   onChange: (key: string, value: any) => void = () => {}
 ) => {
-  const createObserver = (states: any) => {
-    const validator = {
-      get: (target: any, key: string) => {
-        let value = target[key];
-        if (typeof value === "object" && !Array.isArray(value)) {
-          value = createObserver(value);
-        }
-        return value;
-      },
+  const validator = {
+    get: (target: any, key: string) => {
+      let value = target[key];
+      if (typeof value === "object" && !Array.isArray(value)) {
+        value = createObserver(value, onChange);
+      }
+      return value;
+    },
 
-      set: (_: any, key: string, value: any) => {
-        states[key] = value;
-        onChange(key, value);
-        return true;
-      },
-    };
-
-    return new Proxy(states, validator);
+    set: (_: any, key: string, value: any) => {
+      states[key] = value;
+      onChange(key, value);
+      return true;
+    },
   };
 
-  return createObserver(origin);
+  return new Proxy(states, validator);
 };
+
+export const createStates = (
+  states: any,
+  onChange: (key: string, value: any) => void = () => {}
+) => createObserver(states, onChange);
 
 export const updateVars = (
   value: string | null | never,

@@ -1,13 +1,25 @@
 import { EventTypes, Attributes } from "@utils/const";
-import { createElement, getAttributes } from "@utils/node";
+import {
+  createElement,
+  getAttrList,
+  getNodeName,
+  getNodeValue,
+  setHTML,
+  getHTML,
+  cleanHTML,
+} from "@utils/node";
 import { createArray } from "@utils/data";
 
-type StatesObserverCallback = () => void;
+type ObserverCallback = () => void;
 
 class BaseElement extends HTMLElement {
   shadow: ShadowRoot;
   statesName: string = Attributes.States;
-  observerFn: StatesObserverCallback[] = [];
+  observers: [
+    eventTypes: EventTypes,
+    callback: ObserverCallback,
+    target?: EventTarget
+  ][] = [];
 
   constructor(statesName?: string) {
     super();
@@ -22,7 +34,7 @@ class BaseElement extends HTMLElement {
   }
 
   connectedCallback() {
-    this.connectStatesObserver();
+    this.listenVarsObserver();
   }
 
   mount(customHTML?: string) {
@@ -31,29 +43,33 @@ class BaseElement extends HTMLElement {
   }
 
   render(customHTML?: string) {
-    this.setHTML(customHTML || this.getHTML(), this.shadow);
+    setHTML(this.shadow, customHTML || getHTML(this));
   }
 
   cleanShadow() {
-    this.setHTML("", this.shadow);
+    cleanHTML(this.shadow);
   }
 
   clean() {
     requestAnimationFrame(() => {
-      this.setHTML("");
+      cleanHTML(this);
     });
   }
 
-  addStatesObserver(fn: StatesObserverCallback) {
-    this.observerFn.push(fn);
+  addVarsObserver(
+    eventType: EventTypes,
+    fn: ObserverCallback,
+    target?: EventTarget
+  ) {
+    this.observers.push([eventType, fn, target]);
   }
 
-  connectStatesObserver() {
-    document.addEventListener(EventTypes.StatesUpdate, () => {
-      for (const fn of this.observerFn) {
+  listenVarsObserver() {
+    for (const [eventType, fn, eventTarget] of this.observers) {
+      (eventTarget || document).addEventListener(eventType, () => {
         fn();
-      }
-    });
+      });
+    }
   }
 
   createScopedElement({
@@ -69,15 +85,15 @@ class BaseElement extends HTMLElement {
   }) {
     this.shadow.querySelectorAll(selector).forEach((node) => {
       const element = document.createElement(tag);
-      createArray<Attr>(getAttributes(node)).forEach((attr) => {
-        const nodeName = this.getNodeName(attr);
-        const nodeValue = this.getNodeValue(attr);
+      createArray<Attr>(getAttrList(node)).forEach((attr) => {
+        const nodeName = getNodeName(attr);
+        const nodeValue = getNodeValue(attr);
         return element.setAttribute(
-          this.getNodeName(attr),
+          getNodeName(attr),
           nodeValue ? nodeValue : nodeName
         );
       });
-      this.setHTML(this.getHTML(node), element);
+      setHTML(element, getHTML(node));
       node.parentNode?.replaceChild(element, node);
       node.parentNode?.removeChild(node);
     });
@@ -93,26 +109,6 @@ class BaseElement extends HTMLElement {
 
   getHost() {
     return (<Node & { host: Node }>this.getRootNode()).host;
-  }
-
-  getAttrVal(attrName: string, element?: Element) {
-    return (element || this).getAttribute(attrName);
-  }
-
-  getHTML(element?: Element) {
-    return (element || this).innerHTML;
-  }
-
-  setHTML(content: string, element?: Element | ShadowRoot) {
-    (element || this).innerHTML = content;
-  }
-
-  getNodeName(node: Node | Attr) {
-    return node.nodeName;
-  }
-
-  getNodeValue(node: Node | Attr) {
-    return node.nodeValue;
   }
 }
 
