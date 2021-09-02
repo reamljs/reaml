@@ -11,6 +11,7 @@ import { createObserver } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
 import StatesComponent from "@classes/StatesComponent";
+import PropsComponent from "@classes/PropsComponent";
 import IfLogicComponent from "@classes/IfLogicComponent";
 
 class WebApp extends BaseElement {
@@ -21,8 +22,8 @@ class WebApp extends BaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.mount();
     this.createObservableStates();
+    this.mount();
     this.registerElements();
   }
 
@@ -31,11 +32,13 @@ class WebApp extends BaseElement {
   }
 
   createObservableStates() {
-    const event = new CustomEvent(EventTypes.StatesUpdate);
     const statesName = this.getOriginStatesName();
     (<any>window)[statesName] = createObserver((<any>window)[statesName], () =>
       document.dispatchEvent(event)
     );
+    const event = new CustomEvent(EventTypes.StatesUpdate, {
+      detail: (<any>window)[statesName],
+    });
   }
 
   registerElements() {
@@ -73,6 +76,7 @@ class WebApp extends BaseElement {
   registerScopedComponents() {
     (<[string, CustomElementConstructor][]>[
       [CustomElement.StatesComponent, StatesComponent],
+      [CustomElement.PropsComponent, PropsComponent],
       [CustomElement.IfLogicComponent, IfLogicComponent],
     ]).forEach(([selector, elementClass]) => {
       this.createScopedElement({

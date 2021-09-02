@@ -11,10 +11,11 @@ const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   return result === undefined || result === obj ? defaultValue : result;
 };
 
-export const getStates = (states: any, path: string) => baseGet(states, path);
+export const getStates = (states: any, path: string) =>
+  !path ? states : baseGet(states, path);
 
-export const getSafeStates = (states: any, path: string) =>
-  baseGet(Object.freeze({ states }), path);
+export const getSafeStates = (name: string, states: any, path: string) =>
+  baseGet(Object.freeze({ [name]: states }), path);
 
 export const getSafeGlobalStates = (statesName: string, path: string) => {
   const states = Object.freeze({

@@ -2,6 +2,7 @@ export enum Attributes {
   Component = "component",
   PropsPrefix = "props:",
   States = "states",
+  Value = "value",
 }
 
 export enum EventTypes {
@@ -12,6 +13,7 @@ export enum EventTypes {
 export enum CustomElement {
   Main = "web-app",
   StatesComponent = "states",
+  PropsComponent = "props",
   DefineComponent = "define",
   ImportComponent = "import",
   IfLogicComponent = "if",

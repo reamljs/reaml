@@ -1,11 +1,11 @@
-import { EventTypes } from "@utils/const";
-import { getGlobalStates } from "@utils/state";
-import { getHTML, getAttr } from "@utils/node";
+import { EventTypes, Attributes } from "@utils/const";
+import { getGlobalStates, getStates } from "@utils/state";
+import { getHTML } from "@utils/node";
+import { renderValueAs } from "@utils/fn";
 import BaseElement from "@classes/BaseElement";
 
 class StatesComponent extends BaseElement {
   initialValue: string;
-  renderAs: string | undefined = undefined;
 
   constructor(statesName: string) {
     super(statesName);
@@ -14,23 +14,20 @@ class StatesComponent extends BaseElement {
 
   connectedCallback() {
     this.parseRenderer();
-    this.addVarsObserver(EventTypes.StatesUpdate, () => this.render());
+    this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
+      this.render(states)
+    );
     super.connectedCallback();
     this.mount();
   }
 
-  parseRenderer() {
-    this.renderAs = getAttr(this, "as");
-  }
-
-  render() {
-    let value = getGlobalStates(this.statesName, this.initialValue);
+  render(states?: any) {
+    let value = states
+      ? getStates(states, this.initialValue)
+      : getGlobalStates(this.statesName, this.initialValue);
     if (value === undefined) return;
     if (this.renderAs) {
-      value =
-        this.renderAs === "json"
-          ? JSON.stringify(value, null, 2)
-          : (<any>window)[this.renderAs](value);
+      value = renderValueAs(value, this.renderAs);
     }
 
     const textNode = document.createTextNode(value);
@@ -40,7 +37,7 @@ class StatesComponent extends BaseElement {
 
   mount() {
     this.render();
-    this.setAttribute("value", this.initialValue);
+    this.setAttribute(Attributes.Value, this.initialValue);
     this.clean();
   }
 }

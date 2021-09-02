@@ -1,6 +1,7 @@
 import { EventTypes, Attributes } from "@utils/const";
 import {
   createElement,
+  getAttr,
   getAttrList,
   getNodeName,
   getNodeValue,
@@ -11,9 +12,10 @@ import {
 } from "@utils/node";
 import { createArray } from "@utils/data";
 
-type ObserverCallback = () => void;
+type ObserverCallback = (data?: any) => void;
 
 class BaseElement extends HTMLElement {
+  renderAs: string | undefined;
   shadow: ShadowRoot;
   statesName: string = Attributes.States;
   observers: [
@@ -68,8 +70,8 @@ class BaseElement extends HTMLElement {
 
   listenVarsObserver() {
     for (const [eventType, fn, eventTarget] of this.observers) {
-      (eventTarget || document).addEventListener(eventType, () => {
-        fn();
+      (eventTarget || document).addEventListener(eventType, (object?: any) => {
+        fn(object?.detail);
       });
     }
   }
@@ -85,6 +87,8 @@ class BaseElement extends HTMLElement {
     elementClass: CustomElementConstructor;
     args?: any;
   }) {
+    if (customElements.get(tag)) return;
+
     querySelectorAll(this.shadow, selector).forEach((node) => {
       const element = document.createElement(tag);
       createArray<Attr>(getAttrList(node)).forEach((attr) => {
@@ -111,6 +115,10 @@ class BaseElement extends HTMLElement {
 
   getHost() {
     return (<Node & { host: Node }>this.getRootNode()).host;
+  }
+
+  parseRenderer() {
+    this.renderAs = getAttr(this, "as");
   }
 }
 

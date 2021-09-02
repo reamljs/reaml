@@ -1,22 +1,26 @@
 import BaseElement from "@classes/BaseElement";
 import { Attributes, EventTypes } from "@utils/const";
-import { getAttrList, getNodeName, getNodeValue } from "@utils/node";
 import { createArray } from "@utils/data";
-import { getGlobalStatesDefault, createObserver } from "@utils/state";
+import { getAttrList, getNodeName, getNodeValue } from "@utils/node";
+import {
+  getGlobalStatesDefault,
+  createObserver,
+  getSafeStates,
+} from "@utils/state";
 
 const camelRegx = /[^a-zA-Z0-9]+(.)/g;
 
 class DefineComponent extends BaseElement {
-  content: string;
-  defaultProps: any;
-  props: any;
-  $props: any;
+  private content: string;
+  private defaultProps: any;
+  private props: any;
+  private $props: any;
 
   constructor(statesName: string, html: string, attrs: NamedNodeMap) {
     super(statesName);
     this.defaultProps = this.getProps(attrs);
     this.props = this.getProps(getAttrList(this));
-    this.$props = {};
+    this.$props = this.getProps(getAttrList(this));
     this.content = html;
   }
 
@@ -27,24 +31,28 @@ class DefineComponent extends BaseElement {
   }
 
   createObservableProps() {
-    const event = new CustomEvent(EventTypes.PropsUpdate);
-    this.$props = createObserver(this.props, () => this.dispatchEvent(event));
+    this.$props = createObserver({}, () => this.dispatchEvent(event));
+    const event = new CustomEvent(EventTypes.PropsUpdate, {
+      detail: this.$props,
+    });
   }
 
   applyProps() {
-    this.addVarsObserver(EventTypes.StatesUpdate, () => this.updateProps());
+    this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
+      this.updateProps(states)
+    );
     this.createObservableProps();
     this.cleanUglyProps();
     this.updateProps();
   }
 
-  updateProps() {
+  updateProps(states?: any) {
     if (!this.props) return;
     Object.keys(this.props).forEach((attrName) => {
-      const attrValue = this.props[attrName];
-
-      const path = attrValue ?? this.defaultProps?.[attrName];
-      const nextValue = getGlobalStatesDefault(this.statesName, path);
+      const path = this.props[attrName] || this.defaultProps[attrName];
+      const nextValue = states
+        ? getSafeStates(this.statesName, states, path)
+        : getGlobalStatesDefault(this.statesName, path);
       const prevValue = this.dataset[attrName];
       if (nextValue !== prevValue) {
         this.$props[attrName] = nextValue;

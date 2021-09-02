@@ -1,6 +1,6 @@
 import BaseElement from "@classes/BaseElement";
-import { EventTypes } from "@utils/const";
-import { getSafeGlobalStates } from "@utils/state";
+import { EventTypes, Attributes } from "@utils/const";
+import { getSafeStates, getSafeGlobalStates } from "@utils/state";
 import { parseValue } from "@utils/data";
 import { setHTML, getHTML, getAttr } from "@utils/node";
 
@@ -28,13 +28,15 @@ class IfLogicComponent extends BaseElement {
 
   connectedCallback() {
     this.initLogic();
-    this.addVarsObserver(EventTypes.StatesUpdate, () => this.renderLogic());
+    this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
+      this.renderLogic(states)
+    );
     super.connectedCallback();
     this.mount();
   }
 
   initLogic() {
-    this.attrValue = getAttr(this, "value");
+    this.attrValue = getAttr(this, Attributes.Value);
     [
       LogicOperator.Equal,
       LogicOperator.NotEqual,
@@ -51,8 +53,10 @@ class IfLogicComponent extends BaseElement {
     });
   }
 
-  renderLogic() {
-    const value = getSafeGlobalStates(this.statesName, this.attrValue);
+  renderLogic(states?: any) {
+    const value = states
+      ? getSafeStates(this.statesName, states, this.attrValue)
+      : getSafeGlobalStates(this.statesName, this.attrValue);
     const comparator = parseValue(this.cond);
     const isRender = [
       [LogicOperator.Equal, value === comparator],
