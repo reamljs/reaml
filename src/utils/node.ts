@@ -1,3 +1,5 @@
+import { createArray } from "@utils/data";
+
 export const createElement = (
   name: string,
   elementClass: CustomElementConstructor
@@ -29,3 +31,13 @@ export const querySelectorAll = (
   element: Element | ShadowRoot,
   selector: string
 ) => element.querySelectorAll(selector);
+
+export const createTag = (tagName: string) => document.createElement(tagName);
+
+export const copyAttrs = (fromElement: Element, toElement: Element) => {
+  createArray<Attr>(getAttrList(fromElement)).forEach((attr) => {
+    const nodeName = getNodeName(attr);
+    const nodeValue = getNodeValue(attr);
+    toElement.setAttribute(getNodeName(attr), nodeValue ? nodeValue : nodeName);
+  });
+};

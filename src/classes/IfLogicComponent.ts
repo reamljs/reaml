@@ -2,7 +2,7 @@ import BaseElement from "@classes/BaseElement";
 import { EventTypes, Attributes } from "@utils/const";
 import { getSafeStates, getSafeGlobalStates } from "@utils/state";
 import { parseValue } from "@utils/data";
-import { setHTML, getHTML, getAttr } from "@utils/node";
+import { setHTML, getHTML, getAttr, createTag } from "@utils/node";
 
 enum LogicOperator {
   Equal = "eq",
@@ -94,7 +94,7 @@ class IfLogicComponent extends BaseElement {
   }
 
   addStylesheet() {
-    const style = document.createElement("style");
+    const style = createTag("style");
     style.id = STYLE_RENDERER_ID;
     this.shadow.insertBefore(style, this.shadow.firstChild);
     this.hideContent();

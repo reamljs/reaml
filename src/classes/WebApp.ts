@@ -1,17 +1,9 @@
 import { CustomElement, EventTypes, Attributes } from "@utils/const";
-import {
-  createElement,
-  getAttrList,
-  getAttr,
-  getHTML,
-  cleanHTML,
-  querySelectorAll,
-} from "@utils/node";
+import { getAttrList, getAttr, getHTML } from "@utils/node";
 import { createObserver } from "@utils/state";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
 import StatesComponent from "@classes/StatesComponent";
-import PropsComponent from "@classes/PropsComponent";
 import IfLogicComponent from "@classes/IfLogicComponent";
 
 class WebApp extends BaseElement {
@@ -42,48 +34,34 @@ class WebApp extends BaseElement {
   }
 
   registerElements() {
-    this.registerScopedComponents();
-    this.registerDefinesComponent();
-  }
-
-  registerDefinesComponent() {
-    const cleanupDOM = (node: Element) => {
-      cleanHTML(node);
-      node.remove();
-    };
-
-    const getDefineElement = (element: ShadowRoot | Element) =>
-      querySelectorAll(element, CustomElement.DefineComponent);
-
-    const statesName = this.statesName;
-
-    getDefineElement(this.shadow).forEach((element) => {
-      const attributes = getAttrList(element);
-      const html = getHTML(element);
-      getDefineElement(element).forEach(cleanupDOM);
-      createElement(
-        getAttr(element, Attributes.Component),
-        class extends DefineComponent {
-          constructor() {
-            super(statesName, html, attributes);
-          }
-        }
-      );
-      cleanupDOM(element);
-    });
-  }
-
-  registerScopedComponents() {
     (<[string, CustomElementConstructor][]>[
       [CustomElement.StatesComponent, StatesComponent],
-      [CustomElement.PropsComponent, PropsComponent],
       [CustomElement.IfLogicComponent, IfLogicComponent],
-    ]).forEach(([selector, elementClass]) => {
-      this.createScopedElement({
-        selector,
+    ]).forEach(([elementSelector, elementClass]) => {
+      this.createStaticElement({
+        elementSelector,
         elementClass,
-        tag: `${selector}-${Attributes.Component}`,
+        elementTag: `${elementSelector}-${Attributes.Component}`,
         args: this.statesName,
+      });
+    });
+
+    (<[string, CustomElementConstructor, (element: Element) => any][]>[
+      [
+        CustomElement.DefineComponent,
+        DefineComponent,
+        (element) => ({
+          elementTag: getAttr(element, Attributes.Component),
+          statesName: this.statesName,
+          tagAttributes: getAttrList(element),
+          content: getHTML(element),
+        }),
+      ],
+    ]).forEach(([elementSelector, elementClass, iteratorCallback]) => {
+      this.createDeepElement({
+        elementSelector,
+        elementClass,
+        iteratorCallback,
       });
     });
   }

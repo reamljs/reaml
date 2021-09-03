@@ -7,9 +7,12 @@ export const parseValue = (value: any) => {
   return JSON.parse(isNonString ? value : `${value}`);
 };
 
-export const randomNumber = () => {
+export const toPrimitiveObject = (anything: any) =>
+  JSON.parse(JSON.stringify(anything));
+
+export const randomId = () => {
   const [, , ...num] = Math.random().toString().split("");
-  return num.join("");
+  return parseInt(num.join("")).toString(32);
 };
 
 export const createArray = <T>(any: any): T[] => Array.from(any);

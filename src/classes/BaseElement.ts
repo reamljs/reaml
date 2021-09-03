@@ -2,17 +2,30 @@ import { EventTypes, Attributes } from "@utils/const";
 import {
   createElement,
   getAttr,
-  getAttrList,
-  getNodeName,
-  getNodeValue,
   setHTML,
   getHTML,
   cleanHTML,
   querySelectorAll,
+  createTag,
+  copyAttrs,
 } from "@utils/node";
-import { createArray } from "@utils/data";
 
 type ObserverCallback = (data?: any) => void;
+
+type CreateElementOptions = {
+  elementTag: string;
+  elementSelector: string;
+  elementClass: CustomElementConstructor;
+  args?: any;
+};
+
+type CrateDeepElementOptions = Omit<CreateElementOptions, "elementTag"> & {
+  isCleanup?: boolean;
+  iteratorCallback?: (element: Element) => {
+    elementTag?: string;
+    [key: string]: any;
+  };
+};
 
 class BaseElement extends HTMLElement {
   renderAs: string | undefined;
@@ -76,35 +89,68 @@ class BaseElement extends HTMLElement {
     }
   }
 
-  createScopedElement({
-    tag,
-    selector,
+  createDeepElement({
+    elementSelector,
+    elementClass,
+    isCleanup = true,
+    iteratorCallback = () => ({ tag: undefined }),
+  }: CrateDeepElementOptions) {
+    const cleanupDOM = (node: Element) => {
+      cleanHTML(node);
+      node.remove();
+    };
+
+    const getDefineElement = (element: ShadowRoot | Element) =>
+      querySelectorAll(element, elementSelector);
+
+    const elements: [string, Element][] = [];
+    getDefineElement(this.shadow).forEach((element) => {
+      const args = iteratorCallback(element);
+      const elementTag = args.elementTag;
+      delete args.elementTag;
+
+      if (!elementTag) return;
+      if (customElements.get(elementTag)) return;
+
+      if (isCleanup) {
+        getDefineElement(element).forEach(cleanupDOM);
+      }
+
+      createElement(
+        elementTag,
+        class extends elementClass {
+          constructor() {
+            super(args);
+          }
+        }
+      );
+
+      elements.push([elementTag, element]);
+      if (isCleanup) {
+        cleanupDOM(element);
+      }
+    });
+
+    return elements;
+  }
+
+  createStaticElement({
+    elementTag,
+    elementSelector,
     elementClass,
     args = {},
-  }: {
-    tag: string;
-    selector: string;
-    elementClass: CustomElementConstructor;
-    args?: any;
-  }) {
-    if (customElements.get(tag)) return;
+  }: CreateElementOptions) {
+    if (customElements.get(elementTag)) return;
 
-    querySelectorAll(this.shadow, selector).forEach((node) => {
-      const element = document.createElement(tag);
-      createArray<Attr>(getAttrList(node)).forEach((attr) => {
-        const nodeName = getNodeName(attr);
-        const nodeValue = getNodeValue(attr);
-        return element.setAttribute(
-          getNodeName(attr),
-          nodeValue ? nodeValue : nodeName
-        );
-      });
+    querySelectorAll(this.shadow, elementSelector).forEach((node) => {
+      const element = createTag(elementTag);
+      copyAttrs(node, element);
       setHTML(element, getHTML(node));
       node.parentNode?.replaceChild(element, node);
       node.parentNode?.removeChild(node);
     });
     createElement(
-      tag,
+      elementTag,
       class extends elementClass {
         constructor() {
           super(args);

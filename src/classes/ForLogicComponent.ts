@@ -1,4 +1,4 @@
-// import { createScopedElement } from "@utils/node";
+// import { createStaticElement } from "@utils/node";
 // import { CustomElement } from "@utils/const";
 // import { getSafeStates } from "@utils/state";
 // import BaseElement from "@classes/BaseElementLegacy";
@@ -27,7 +27,7 @@
 //   registerLoopComponent() {
 //     this.addTraversalCallback((shadow: ShadowRoot) => {
 //       const values = this.values;
-//       createScopedElement({
+//       createStaticElement({
 //         shadow,
 //         tag: `${CustomElement.LoopComponent}-${this.key}`,
 //         selector: CustomElement.LoopComponent,

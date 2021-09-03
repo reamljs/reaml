@@ -1,39 +1,69 @@
 import BaseElement from "@classes/BaseElement";
-import { Attributes, EventTypes } from "@utils/const";
-import { createArray } from "@utils/data";
-import { getAttrList, getNodeName, getNodeValue } from "@utils/node";
+import { Attributes, EventTypes, CustomElement } from "@utils/const";
+import {
+  createArray,
+  toPrimitiveObject,
+  parseValue,
+  randomId,
+} from "@utils/data";
+import {
+  getAttrList,
+  getNodeName,
+  getNodeValue,
+  createTag,
+  copyAttrs,
+  getHTML,
+} from "@utils/node";
 import {
   getGlobalStatesDefault,
   createObserver,
   getSafeStates,
 } from "@utils/state";
+import PropsComponent from "@classes/PropsComponent";
 
 const camelRegx = /[^a-zA-Z0-9]+(.)/g;
 
-class DefineComponent extends BaseElement {
-  private content: string;
-  private defaultProps: any;
-  private props: any;
-  private $props: any;
+type DefineComponentInitialValue = {
+  statesName: string;
+  content: string;
+  tagAttributes: NamedNodeMap;
+};
 
-  constructor(statesName: string, html: string, attrs: NamedNodeMap) {
+export interface IDefineComponent {
+  props: any;
+  defaultProps: any;
+  proxyProps: any;
+}
+
+class DefineComponent extends BaseElement implements IDefineComponent {
+  content: string;
+  defaultProps: any;
+  props: any;
+  proxyProps: any;
+
+  constructor({
+    statesName,
+    content,
+    tagAttributes,
+  }: DefineComponentInitialValue) {
     super(statesName);
-    this.defaultProps = this.getProps(attrs);
+    this.defaultProps = this.getProps(tagAttributes);
     this.props = this.getProps(getAttrList(this));
-    this.$props = this.getProps(getAttrList(this));
-    this.content = html;
+    this.proxyProps = this.getProps(getAttrList(this));
+    this.content = content;
   }
 
   connectedCallback() {
     this.applyProps();
     super.connectedCallback();
     this.mount(this.content);
+    this.registerPropsComponents();
   }
 
   createObservableProps() {
-    this.$props = createObserver({}, () => this.dispatchEvent(event));
+    this.proxyProps = createObserver({}, () => this.dispatchEvent(event));
     const event = new CustomEvent(EventTypes.PropsUpdate, {
-      detail: this.$props,
+      detail: this.proxyProps,
     });
   }
 
@@ -50,12 +80,14 @@ class DefineComponent extends BaseElement {
     if (!this.props) return;
     Object.keys(this.props).forEach((attrName) => {
       const path = this.props[attrName] || this.defaultProps[attrName];
-      const nextValue = states
+      const value = states
         ? getSafeStates(this.statesName, states, path)
         : getGlobalStatesDefault(this.statesName, path);
+      const nextValue = (value ?? path).toString();
+
       const prevValue = this.dataset[attrName];
       if (nextValue !== prevValue) {
-        this.$props[attrName] = nextValue;
+        this.proxyProps[attrName] = parseValue(nextValue);
         this.dataset[attrName] = `${nextValue}`;
       }
     });
@@ -84,7 +116,26 @@ class DefineComponent extends BaseElement {
       }
     }
 
-    return props;
+    return toPrimitiveObject(props);
+  }
+
+  registerPropsComponents() {
+    const elements = this.createDeepElement({
+      isCleanup: false,
+      elementSelector: CustomElement.PropsComponent,
+      elementClass: PropsComponent,
+      iteratorCallback: (element) => ({
+        elementTag: `${CustomElement.PropsComponent}-${randomId()}`,
+        content: getHTML(element),
+        elementHost: this,
+      }),
+    });
+
+    elements.forEach(([tagName, element]) => {
+      const propsElement = createTag(tagName);
+      copyAttrs(element, propsElement);
+      element.replaceWith(propsElement);
+    });
   }
 }
 
