@@ -28,7 +28,7 @@ module.exports = defineConfig({
         properties: {
           builtins: true,
           regex:
-            /Component|PropsPrefix|States|StatesUpdate|Main|StatesComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|statesName|mount|render|clean|cleanShadow|observers|addVarsObserver|listenVarsObserver|getHost|content|defaultProps|props|applyProps|updateProps|cleanUglyProps|getOriginStatesName|createObservableStates|registerElements|getProps|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|attrValue|cond|op|initLogic|renderLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|initialValue|renderAs|parseRenderer|elementSelector|elementClass|elementTag|args|shadow|getAttrVal|getHTML|setHTML|createDeepElement|createStaticElement|isCleanup|iteratorCallback|tagAttributes/,
+            /Component|PropsPrefix|States|StatesUpdate|Main|StatesComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|statesName|mount|render|clean|cleanShadow|observers|addVarsObserver|listenVarsObserver|getHost|content|defaultProps|props|applyProps|updateProps|cleanUglyProps|getOriginStatesName|createObservableStates|registerElements|getProps|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|attrValue|cond|op|initLogic|renderLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|initialValue|renderAs|parseRenderer|elementSelector|elementClass|elementTag|args|shadow|getAttrVal|getHTML|setHTML|createDeepElement|createStaticElement|isCleanup|iteratorCallback|tagAttributes|elementHost/,
         },
       },
     },

@@ -34,8 +34,15 @@ export const querySelectorAll = (
 
 export const createTag = (tagName: string) => document.createElement(tagName);
 
-export const copyAttrs = (fromElement: Element, toElement: Element) => {
-  createArray<Attr>(getAttrList(fromElement)).forEach((attr) => {
+export const copyAttrs = (
+  fromElementOrAttrs: Element | NamedNodeMap,
+  toElement: Element
+) => {
+  const attrs =
+    fromElementOrAttrs instanceof NamedNodeMap
+      ? fromElementOrAttrs
+      : getAttrList(fromElementOrAttrs);
+  createArray<Attr>(attrs).forEach((attr) => {
     const nodeName = getNodeName(attr);
     const nodeValue = getNodeValue(attr);
     toElement.setAttribute(getNodeName(attr), nodeValue ? nodeValue : nodeName);

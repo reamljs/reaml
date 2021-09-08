@@ -20,7 +20,7 @@ type CreateElementOptions = {
 };
 
 type CrateDeepElementOptions = Omit<CreateElementOptions, "elementTag"> & {
-  isCleanup?: boolean;
+  isRemoveNode?: boolean;
   iteratorCallback?: (element: Element) => {
     elementTag?: string;
     [key: string]: any;
@@ -37,13 +37,13 @@ class BaseElement extends HTMLElement {
     target?: EventTarget
   ][];
 
-  constructor(statesName?: string) {
+  constructor(statesName?: string, mode: ShadowRootMode = "closed") {
     super();
     if (statesName) {
       this.setStatesName(statesName);
     }
     this.observers = [];
-    this.shadow = this.attachShadow({ mode: "closed" });
+    this.shadow = this.attachShadow({ mode });
   }
 
   setStatesName(statesName: string = Attributes.States) {
@@ -76,13 +76,23 @@ class BaseElement extends HTMLElement {
   addVarsObserver(
     eventType: EventTypes,
     fn: ObserverCallback,
-    target?: EventTarget
+    target: EventTarget = document
   ) {
     this.observers.push([eventType, fn, target]);
   }
 
   listenVarsObserver() {
-    for (const [eventType, fn, eventTarget] of this.observers) {
+    document.addEventListener(EventTypes.StatesUpdate, (object?: any) => {
+      this.observers
+        .filter(([eventType]) => eventType === EventTypes.StatesUpdate)
+        .forEach(([, fn]) => {
+          fn(object?.detail);
+        });
+    });
+
+    for (const [eventType, fn, eventTarget] of this.observers.filter(
+      ([eventType]) => eventType === EventTypes.PropsUpdate
+    )) {
       (eventTarget || document).addEventListener(eventType, (object?: any) => {
         fn(object?.detail);
       });
@@ -90,48 +100,44 @@ class BaseElement extends HTMLElement {
   }
 
   createDeepElement({
+    isRemoveNode = true,
     elementSelector,
     elementClass,
-    isCleanup = true,
     iteratorCallback = () => ({ tag: undefined }),
   }: CrateDeepElementOptions) {
-    const cleanupDOM = (node: Element) => {
-      cleanHTML(node);
-      node.remove();
+    const getElement = (element: ShadowRoot | Element | Document) =>
+      element.querySelectorAll(elementSelector);
+
+    const removeElement = (element: Element) => {
+      element.remove();
     };
 
-    const getDefineElement = (element: ShadowRoot | Element) =>
-      querySelectorAll(element, elementSelector);
+    getElement(this.shadow).forEach((node) => {
+      if (isRemoveNode) {
+        getElement(node).forEach(removeElement);
+      }
 
-    const elements: [string, Element][] = [];
-    getDefineElement(this.shadow).forEach((element) => {
-      const args = iteratorCallback(element);
+      const args = iteratorCallback(node);
+      if (!args.elementTag) return;
+
       const elementTag = args.elementTag;
       delete args.elementTag;
 
-      if (!elementTag) return;
-      if (customElements.get(elementTag)) return;
-
-      if (isCleanup) {
-        getDefineElement(element).forEach(cleanupDOM);
+      if (!customElements.get(elementTag)) {
+        createElement(
+          elementTag,
+          class extends elementClass {
+            constructor() {
+              super(args);
+            }
+          }
+        );
       }
 
-      createElement(
-        elementTag,
-        class extends elementClass {
-          constructor() {
-            super(args);
-          }
-        }
-      );
-
-      elements.push([elementTag, element]);
-      if (isCleanup) {
-        cleanupDOM(element);
+      if (isRemoveNode) {
+        removeElement(node);
       }
     });
-
-    return elements;
   }
 
   createStaticElement({
@@ -149,6 +155,7 @@ class BaseElement extends HTMLElement {
       node.parentNode?.replaceChild(element, node);
       node.parentNode?.removeChild(node);
     });
+
     createElement(
       elementTag,
       class extends elementClass {

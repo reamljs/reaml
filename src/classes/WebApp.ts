@@ -52,9 +52,9 @@ class WebApp extends BaseElement {
         DefineComponent,
         (element) => ({
           elementTag: getAttr(element, Attributes.Component),
-          statesName: this.statesName,
           tagAttributes: getAttrList(element),
           content: getHTML(element),
+          statesName: this.statesName,
         }),
       ],
     ]).forEach(([elementSelector, elementClass, iteratorCallback]) => {

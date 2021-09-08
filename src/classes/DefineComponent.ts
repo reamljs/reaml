@@ -13,6 +13,7 @@ import {
   createTag,
   copyAttrs,
   getHTML,
+  setHTML,
 } from "@utils/node";
 import {
   getGlobalStatesDefault,
@@ -120,21 +121,33 @@ class DefineComponent extends BaseElement implements IDefineComponent {
   }
 
   registerPropsComponents() {
-    const elements = this.createDeepElement({
-      isCleanup: false,
-      elementSelector: CustomElement.PropsComponent,
+    const propsId = randomId();
+    const elements: [
+      srcElement: Element,
+      value: string,
+      attrs: NamedNodeMap
+    ][] = [];
+    const elementSelector = CustomElement.PropsComponent;
+    const elementTag = `${CustomElement.PropsComponent}-${propsId}`;
+    this.createDeepElement({
+      isRemoveNode: false,
+      elementSelector,
       elementClass: PropsComponent,
-      iteratorCallback: (element) => ({
-        elementTag: `${CustomElement.PropsComponent}-${randomId()}`,
-        content: getHTML(element),
-        elementHost: this,
-      }),
+      iteratorCallback: (element) => {
+        elements.push([element, getHTML(element), getAttrList(element)]);
+        return {
+          elementTag,
+          elementHost: this,
+        };
+      },
     });
 
-    elements.forEach(([tagName, element]) => {
-      const propsElement = createTag(tagName);
-      copyAttrs(element, propsElement);
-      element.replaceWith(propsElement);
+    elements.forEach(([element, initialValue, attrs]) => {
+      const propsElement = createTag(elementTag);
+      copyAttrs(attrs, propsElement);
+      setHTML(propsElement, initialValue);
+      element.parentNode?.replaceChild(propsElement, element);
+      element.remove();
     });
   }
 }
