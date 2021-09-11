@@ -1,6 +1,6 @@
 import { EventTypes, Attributes } from "@utils/const";
 import { getGlobalStates, getStates } from "@utils/state";
-import { getHTML } from "@utils/node";
+import { getContent } from "@utils/node";
 import { renderValueAs } from "@utils/fn";
 import BaseElement from "@classes/BaseElement";
 
@@ -9,7 +9,7 @@ class StatesComponent extends BaseElement {
 
   constructor(statesName: string) {
     super(statesName);
-    this.initialValue = getHTML(this);
+    this.initialValue = getContent(this);
   }
 
   connectedCallback() {
@@ -17,7 +17,6 @@ class StatesComponent extends BaseElement {
     this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
       this.render(states)
     );
-    super.connectedCallback();
     this.mount();
   }
 

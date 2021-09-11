@@ -31,27 +31,17 @@ class BaseElement extends HTMLElement {
   renderAs: string | undefined;
   shadow: ShadowRoot;
   statesName: string = Attributes.States;
-  observers: [
-    eventTypes: EventTypes,
-    callback: ObserverCallback,
-    target?: EventTarget
-  ][];
 
   constructor(statesName?: string, mode: ShadowRootMode = "closed") {
     super();
     if (statesName) {
       this.setStatesName(statesName);
     }
-    this.observers = [];
     this.shadow = this.attachShadow({ mode });
   }
 
   setStatesName(statesName: string = Attributes.States) {
     this.statesName = statesName;
-  }
-
-  connectedCallback() {
-    this.listenVarsObserver();
   }
 
   mount(customHTML?: string) {
@@ -76,27 +66,11 @@ class BaseElement extends HTMLElement {
   addVarsObserver(
     eventType: EventTypes,
     fn: ObserverCallback,
-    target: EventTarget = document
+    eventTarget: EventTarget = document
   ) {
-    this.observers.push([eventType, fn, target]);
-  }
-
-  listenVarsObserver() {
-    document.addEventListener(EventTypes.StatesUpdate, (object?: any) => {
-      this.observers
-        .filter(([eventType]) => eventType === EventTypes.StatesUpdate)
-        .forEach(([, fn]) => {
-          fn(object?.detail);
-        });
+    (eventTarget || document).addEventListener(eventType, (object?: any) => {
+      fn(object?.detail);
     });
-
-    for (const [eventType, fn, eventTarget] of this.observers.filter(
-      ([eventType]) => eventType === EventTypes.PropsUpdate
-    )) {
-      (eventTarget || document).addEventListener(eventType, (object?: any) => {
-        fn(object?.detail);
-      });
-    }
   }
 
   createDeepElement({

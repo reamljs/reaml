@@ -18,6 +18,9 @@ export const getAttr = (element: Element, attrName: string): string =>
 
 export const getHTML = (element: Element) => element.innerHTML;
 
+export const getContent = (element: Element) =>
+  element.textContent?.trim() ?? "";
+
 export const setHTML = (
   element: Element | ShadowRoot,
   content: string = ""

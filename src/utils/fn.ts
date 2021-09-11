@@ -7,3 +7,9 @@ export const renderValueAs = (value: any, renderAs: string) => {
       return (<any>window)?.[renderAs]?.(value);
   }
 };
+
+export const callCode = (thisArgs: any, codes: string[], execute?: boolean) => {
+  const fn = Function.apply(thisArgs, codes);
+  if (!execute) return fn;
+  return fn();
+};

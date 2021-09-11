@@ -1,6 +1,6 @@
 import { Attributes, EventTypes } from "@utils/const";
 import { getStates } from "@utils/state";
-import { getHTML } from "@utils/node";
+import { getContent } from "@utils/node";
 import { renderValueAs } from "@utils/fn";
 import BaseElement from "@classes/BaseElement";
 import { IDefineComponent } from "@classes/DefineComponent";
@@ -25,7 +25,7 @@ class PropsComponent extends BaseElement {
   }
 
   connectedCallback() {
-    this.initialValue = getHTML(this).trim();
+    this.initialValue = getContent(this);
     this.parseRenderer();
     this.addVarsObserver(
       EventTypes.PropsUpdate,
@@ -35,7 +35,6 @@ class PropsComponent extends BaseElement {
       },
       <EventTarget>this.elementHost
     );
-    super.connectedCallback();
     this.mount();
   }
 

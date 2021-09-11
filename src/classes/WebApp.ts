@@ -13,7 +13,6 @@ class WebApp extends BaseElement {
   }
 
   connectedCallback() {
-    super.connectedCallback();
     this.createObservableStates();
     this.mount();
     this.registerElements();

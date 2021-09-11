@@ -2,6 +2,7 @@ import BaseElement from "@classes/BaseElement";
 import { EventTypes, Attributes } from "@utils/const";
 import { getSafeStates, getSafeGlobalStates } from "@utils/state";
 import { parseValue, createArray } from "@utils/data";
+import { callCode } from "@utils/fn";
 import {
   setHTML,
   getHTML,
@@ -41,7 +42,11 @@ class IfLogicComponent extends BaseElement {
     this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
       this.renderLogic(states)
     );
-    super.connectedCallback();
+    this.addVarsObserver(
+      EventTypes.PropsUpdate,
+      (props) => this.renderLogic(null, props),
+      this.getHost()
+    );
     this.mount();
   }
 
@@ -57,7 +62,7 @@ class IfLogicComponent extends BaseElement {
       if (args.indexOf(variable) < 0) args.push(variable);
     }
 
-    return Function.apply(null, [...args, `return ${expression}`]);
+    return callCode(null, [...args, `return ${expression}`]);
   }
 
   initLogic() {
@@ -72,7 +77,7 @@ class IfLogicComponent extends BaseElement {
       LogicOperator.FreeCondition,
     ].forEach((op) => {
       const value = getAttr(this, op);
-      if (value === "") {
+      if (!Boolean(value)) {
         return;
       }
 
@@ -82,8 +87,9 @@ class IfLogicComponent extends BaseElement {
           for (const attr of attrs) {
             const nodeName = getNodeName(attr);
             if (nodeName === LogicOperator.FreeCondition) continue;
+
             const nodeValue = getNodeValue(attr);
-            if (nodeValue !== "") {
+            if (Boolean(nodeValue)) {
               this.attrVars[getNodeName(attr)] = getNodeValue(attr);
             }
           }
@@ -100,7 +106,7 @@ class IfLogicComponent extends BaseElement {
     });
   }
 
-  isRender(states?: any) {
+  isRender(states?: any, props: any = {}) {
     const getStates = (path: string) =>
       states
         ? getSafeStates(this.statesName, states, path)
@@ -135,8 +141,8 @@ class IfLogicComponent extends BaseElement {
     return isRender;
   }
 
-  renderLogic(states?: any) {
-    if (!this.isRender(states)) {
+  renderLogic(states?: any, props?: any) {
+    if (!this.isRender(states, props)) {
       this.hideContent();
       return;
     }

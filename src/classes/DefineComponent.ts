@@ -20,6 +20,7 @@ import {
   createObserver,
   getSafeStates,
 } from "@utils/state";
+import { callCode } from "@utils/fn";
 import PropsComponent from "@classes/PropsComponent";
 
 const camelRegx = /[^a-zA-Z0-9]+(.)/g;
@@ -41,6 +42,7 @@ class DefineComponent extends BaseElement implements IDefineComponent {
   defaultProps: any;
   props: any;
   proxyProps: any;
+  cachedStates: any;
 
   constructor({
     statesName,
@@ -51,38 +53,58 @@ class DefineComponent extends BaseElement implements IDefineComponent {
     this.defaultProps = this.getProps(tagAttributes);
     this.props = this.getProps(getAttrList(this));
     this.proxyProps = this.getProps(getAttrList(this));
+    this.cachedStates = (<any>window)[statesName];
     this.content = content;
   }
 
   connectedCallback() {
-    this.applyProps();
-    super.connectedCallback();
+    this.initComponent();
     this.mount(this.content);
     this.registerPropsComponents();
   }
 
+  invokeUpdate() {
+    try {
+      requestAnimationFrame(() => {
+        const states = toPrimitiveObject(this.cachedStates);
+        const props = toPrimitiveObject(this.proxyProps);
+        callCode(this, ["$1", "$2", `onupdates($1, $2)`])(states, props);
+      });
+    } catch {}
+  }
+
   createObservableProps() {
-    this.proxyProps = createObserver({}, () => this.dispatchEvent(event));
+    this.proxyProps = createObserver({}, () => {
+      this.dispatchEvent(event);
+      this.invokeUpdate();
+    });
     const event = new CustomEvent(EventTypes.PropsUpdate, {
       detail: this.proxyProps,
+      bubbles: true,
     });
   }
 
-  applyProps() {
-    this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
-      this.updateProps(states)
-    );
+  initComponent() {
+    this.addVarsObserver(EventTypes.StatesUpdate, (states) => {
+      this.cachedStates = states;
+      this.updateProps();
+      this.invokeUpdate();
+    });
     this.createObservableProps();
     this.cleanUglyProps();
     this.updateProps();
   }
 
-  updateProps(states?: any) {
-    if (!this.props) return;
-    Object.keys(this.props).forEach((attrName) => {
-      const path = this.props[attrName] || this.defaultProps[attrName];
-      const value = states
-        ? getSafeStates(this.statesName, states, path)
+  updateProps() {
+    const props = Object.assign(
+      Object.assign({}, this.defaultProps ?? {}),
+      this.props ?? {}
+    );
+
+    Object.keys(props).forEach((attrName) => {
+      const path = props[attrName];
+      const value = this.cachedStates
+        ? getSafeStates(this.statesName, this.cachedStates, path)
         : getGlobalStatesDefault(this.statesName, path);
       const nextValue = (value ?? path).toString();
 
