@@ -1,80 +1,86 @@
-import { CustomElement, EventTypes, Attributes } from "@utils/const";
-import { getAttrList, getAttr, getHTML } from "@utils/node";
-import { createObserver } from "@utils/state";
-import { randomId } from "@utils/data";
+import { Attributes, ElementTag, EventTypes } from "@utils/const";
+import {
+  createElement,
+  getAttr,
+  getAttrList,
+  getHTML,
+  querySelectorAll,
+} from "@utils/node";
+import createDefineComponentd from "@classes/DefineComponent";
+import { createArray } from "@utils/data";
 import { global } from "@utils/helpers";
-import BaseElement from "@classes/BaseElement";
-import DefineComponent from "@classes/DefineComponent";
-import StatesComponent from "@classes/StatesComponent";
-import IfLogicComponent from "@classes/IfLogicComponent";
+import { createObserver } from "@utils/state";
 
-class WebApp extends BaseElement {
-  id: string;
-
+export default class extends HTMLElement {
   constructor() {
     super();
-    this.id = randomId();
   }
 
   connectedCallback() {
-    this.mount();
-    this.registerElements();
+    this.createStatesObserver();
+    this.registerStateComponent();
+    this.registerDefineComponents();
   }
 
-  mount() {
-    this.setStatesName(this.getOriginStatesName());
-    this.setAttribute(Attributes.Id, this.id);
-    this.createObservableStates();
-    super.mount();
+  getStatesName() {
+    return getAttr(this, Attributes.States) || Attributes.States;
   }
 
-  getOriginStatesName() {
-    return getAttr(this, Attributes.States);
-  }
-
-  createObservableStates() {
-    const statesName = this.getOriginStatesName();
+  createStatesObserver() {
+    const statesName = this.getStatesName();
+    const event = new CustomEvent(`${EventTypes.StatesUpdate}-${statesName}`, {
+      detail: global(statesName),
+    });
     global(
       statesName,
       createObserver(global(statesName), () => document.dispatchEvent(event))
     );
-    const event = new CustomEvent(EventTypes.StatesUpdate, {
-      detail: global(statesName),
-    });
   }
 
-  registerElements() {
-    (<[string, CustomElementConstructor][]>[
-      [CustomElement.StatesComponent, StatesComponent],
-      [CustomElement.IfLogicComponent, IfLogicComponent],
-    ]).forEach(([elementSelector, elementClass]) => {
-      this.createStaticElement({
-        elementSelector,
-        elementClass,
-        elementTag: `${elementSelector}-${Attributes.Component}`,
-        args: this.statesName,
+  registerStateComponent() {}
+
+  registerDefineComponents() {
+    const removeNode = (node: Element) => {
+      node.remove();
+      // @ts-ignore
+      node = null;
+    };
+
+    const nodes: [
+      componentName: string,
+      attributes: NamedNodeMap,
+      node: Element,
+      scripts: Element[]
+    ][] = [];
+
+    createArray<Element>(
+      querySelectorAll(this, ElementTag.DefineComponent)
+    ).forEach((node) => {
+      const tagName = getAttr(node, Attributes.Component);
+      if (!tagName) return;
+
+      const attributes = getAttrList(node);
+      const scripts: Element[] = [];
+      querySelectorAll(node, ElementTag.DefineComponent).forEach(removeNode);
+      querySelectorAll(node, ElementTag.Script).forEach((script) => {
+        scripts.push(script);
+        removeNode(script);
       });
+      nodes.push([tagName.toLowerCase(), attributes, node, scripts]);
+      removeNode(node);
     });
 
-    (<[string, CustomElementConstructor, (element: Element) => any][]>[
-      [
-        CustomElement.DefineComponent,
-        DefineComponent,
-        (element) => ({
-          elementTag: getAttr(element, Attributes.Component),
-          tagAttributes: getAttrList(element),
-          content: getHTML(element),
-          statesName: this.statesName,
-        }),
-      ],
-    ]).forEach(([elementSelector, elementClass, iteratorCallback]) => {
-      this.createDeepElement({
-        elementSelector,
-        elementClass,
-        iteratorCallback,
-      });
+    nodes.forEach(([componentName, attributes, node, scripts]) => {
+      createElement(
+        componentName,
+        createDefineComponentd({
+          name: componentName,
+          statesName: this.getStatesName(),
+          html: getHTML(node),
+          attributes,
+          scripts,
+        })
+      );
     });
   }
 }
-
-export default WebApp;

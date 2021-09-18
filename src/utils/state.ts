@@ -2,8 +2,8 @@ import { global } from "@utils//helpers";
 
 const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   const travel = (regexp: RegExp) =>
-    String.prototype.split
-      .call(path, regexp)
+    path
+      .split(regexp)
       .filter(Boolean)
       .reduce(
         (res, key) => (res !== null && res !== undefined ? res[key] : res),
@@ -13,11 +13,18 @@ const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   return result === undefined || result === obj ? defaultValue : result;
 };
 
-export const getStates = (states: any, path: string) =>
-  !path ? states : baseGet(states, path);
+export const getStates = (
+  states: any,
+  path: string,
+  defaultValue = undefined
+) => (!path ? states : baseGet(states, path, defaultValue));
 
-export const getSafeStates = (name: string, states: any, path: string) =>
-  baseGet(Object.freeze({ [name]: states }), path);
+export const getSafeStates = (
+  name: string,
+  states: any,
+  path: string,
+  defaultValue = undefined
+) => baseGet(Object.freeze({ [name]: states }), path, defaultValue);
 
 export const getSafeGlobalStates = (statesName: string, path: string) => {
   const states = Object.freeze({

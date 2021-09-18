@@ -1,9 +1,9 @@
 import { global } from "@utils/helpers";
+import { camelCase } from "./string";
 
 type ReamlObject = {
-  fnIterator: string;
   fx: {
-    [key: string]: Function;
+    [componentName: string]: [componentId: string, fn: Function][];
   };
 };
 
@@ -20,7 +20,23 @@ export const createREAMLObject = () =>
 
 export const getREAMLObject = () => global<ReamlObject>(REAMLGlobalObjectName);
 
-export const addREAMLFn = (fnName: string) => {
-  const reaml = getREAMLObject();
-  reaml.fnIterator = fnName;
+export const createObserverFn = (
+  componentId?: string,
+  componentName: string = ""
+) => {
+  const observerName = `__${GlobalFunction.createObserver}\$${camelCase(
+    componentName + componentId
+  )}`;
+  const fnName = !componentName ? GlobalFunction.createObserver : observerName;
+  global(fnName, (fn: (states: any, props: any) => void) => {
+    if (!componentId) return;
+    const reaml = getREAMLObject();
+    if (!componentName) return;
+    if (!reaml.fx[componentName]) {
+      reaml.fx[componentName] = [];
+    }
+
+    reaml.fx[componentName].push([componentId, fn]);
+  });
+  return observerName;
 };

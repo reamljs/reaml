@@ -38,6 +38,14 @@ export const querySelectorAll = (
 
 export const createTag = (tagName: string) => document.createElement(tagName);
 
+export const setAttr = (
+  element: Element,
+  attrName: string,
+  attrValue: string
+) => {
+  element.setAttribute(attrName, attrValue);
+};
+
 export const copyAttrs = (
   fromElementOrAttrs: Element | NamedNodeMap,
   toElement: Element
@@ -49,6 +57,6 @@ export const copyAttrs = (
   createArray<Attr>(attrs).forEach((attr) => {
     const nodeName = getNodeName(attr);
     const nodeValue = getNodeValue(attr);
-    toElement.setAttribute(getNodeName(attr), nodeValue ? nodeValue : nodeName);
+    setAttr(toElement, getNodeName(attr), nodeValue ? nodeValue : nodeName);
   });
 };
