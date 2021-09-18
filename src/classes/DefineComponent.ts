@@ -20,7 +20,8 @@ import {
   createObserver,
   getSafeStates,
 } from "@utils/state";
-import { callCode } from "@utils/fn";
+import { callCode, global } from "@utils/helpers";
+import { addREAMLFn } from "@utils/reaml";
 import PropsComponent from "@classes/PropsComponent";
 
 const camelRegx = /[^a-zA-Z0-9]+(.)/g;
@@ -29,6 +30,7 @@ type DefineComponentInitialValue = {
   statesName: string;
   content: string;
   tagAttributes: NamedNodeMap;
+  scripts?: Node[];
 };
 
 export interface IDefineComponent {
@@ -43,38 +45,75 @@ class DefineComponent extends BaseElement implements IDefineComponent {
   props: any;
   proxyProps: any;
   cachedStates: any;
+  isDestroyed: boolean = false;
+  scripts: Node[] = [];
 
   constructor({
     statesName,
     content,
     tagAttributes,
+    scripts,
   }: DefineComponentInitialValue) {
     super(statesName);
-    this.defaultProps = this.getProps(tagAttributes);
-    this.props = this.getProps(getAttrList(this));
-    this.proxyProps = this.getProps(getAttrList(this));
-    this.cachedStates = (<any>window)[statesName];
+    if (scripts) this.scripts = scripts;
+    this.cachedStates = global(statesName);
+    this.parseProps(tagAttributes);
     this.content = content;
   }
 
   connectedCallback() {
-    this.initComponent();
-    this.mount(this.content);
+    if (!this.getHost()) return;
+    this.createObservableProps();
+    this.addObservers();
+    this.mount();
     this.registerPropsComponents();
   }
 
+  disconnectedCallback() {
+    this.isDestroyed = true;
+    super.disconnectedCallback();
+  }
+
+  parseProps(attributes: NamedNodeMap) {
+    this.defaultProps = this.getProps(attributes);
+    this.props = this.getProps(getAttrList(this));
+    this.proxyProps = this.getProps(getAttrList(this));
+  }
+
+  addObservers() {
+    this.addVarsObserver(EventTypes.StatesUpdate, (states) => {
+      if (this.isDestroyed) return;
+      this.cachedStates = states;
+      this.updateProps();
+      this.invokeUpdate();
+    });
+  }
+
+  mount() {
+    super.mount(this.content);
+    this.cleanUglyProps();
+    this.updateProps();
+    this.scripts.forEach((script) => {
+      this.shadow.appendChild(script);
+    });
+  }
+
   invokeUpdate() {
-    try {
-      requestAnimationFrame(() => {
-        const states = toPrimitiveObject(this.cachedStates);
-        const props = toPrimitiveObject(this.proxyProps);
-        callCode(this, ["$1", "$2", `onupdates($1, $2)`])(states, props);
-      });
-    } catch {}
+    // try {
+    //   requestAnimationFrame(() => {
+    //     const states = toPrimitiveObject(this.cachedStates);
+    //     const props = toPrimitiveObject(this.proxyProps);
+    //     callCode(this, ["$1", "$2", `${this.onUpdates}($1, $2)`])(
+    //       states,
+    //       props
+    //     );
+    //   });
+    // } catch {}
   }
 
   createObservableProps() {
     this.proxyProps = createObserver({}, () => {
+      if (this.isDestroyed) return;
       this.dispatchEvent(event);
       this.invokeUpdate();
     });
@@ -82,17 +121,6 @@ class DefineComponent extends BaseElement implements IDefineComponent {
       detail: this.proxyProps,
       bubbles: true,
     });
-  }
-
-  initComponent() {
-    this.addVarsObserver(EventTypes.StatesUpdate, (states) => {
-      this.cachedStates = states;
-      this.updateProps();
-      this.invokeUpdate();
-    });
-    this.createObservableProps();
-    this.cleanUglyProps();
-    this.updateProps();
   }
 
   updateProps() {
@@ -125,10 +153,11 @@ class DefineComponent extends BaseElement implements IDefineComponent {
   getProps(attributes: NamedNodeMap) {
     const props: any = {};
     const replaceCallback = (_: any, chr: string) => chr.toUpperCase();
+    const restrictList: string[] = [Attributes.Component];
 
     for (const attr of createArray<Attr>(attributes)) {
       const attrName = getNodeName(attr);
-      if (attrName === Attributes.Component) continue;
+      if (restrictList.includes(attrName)) continue;
       if (attrName.includes(Attributes.PropsPrefix)) {
         const attrValue = getNodeValue(attr);
         const [, propName] = attrName.split(":");

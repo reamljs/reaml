@@ -2,7 +2,7 @@ import BaseElement from "@classes/BaseElement";
 import { EventTypes, Attributes } from "@utils/const";
 import { getSafeStates, getSafeGlobalStates } from "@utils/state";
 import { parseValue, createArray } from "@utils/data";
-import { callCode } from "@utils/fn";
+import { callCode } from "@utils/helpers";
 import {
   setHTML,
   getHTML,
@@ -33,12 +33,17 @@ class IfLogicComponent extends BaseElement {
   content: string;
 
   constructor(statesName: string) {
-    super(statesName, "open");
+    super(statesName);
     this.content = getHTML(this);
   }
 
   connectedCallback() {
     this.initLogic();
+    this.addObservers();
+    this.mount();
+  }
+
+  addObservers() {
     this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
       this.renderLogic(states)
     );
@@ -47,7 +52,12 @@ class IfLogicComponent extends BaseElement {
       (props) => this.renderLogic(null, props),
       this.getHost()
     );
-    this.mount();
+  }
+
+  mount() {
+    super.mount(this.content);
+    this.addStylesheet();
+    this.renderLogic();
   }
 
   logicLexer(expression: string, args: string[] = []) {
@@ -106,7 +116,7 @@ class IfLogicComponent extends BaseElement {
     });
   }
 
-  isRender(states?: any, props: any = {}) {
+  isRender(states?: any, _: any = {}) {
     const getStates = (path: string) =>
       states
         ? getSafeStates(this.statesName, states, path)
@@ -172,13 +182,6 @@ class IfLogicComponent extends BaseElement {
     style.id = STYLE_RENDERER_ID;
     this.shadow.insertBefore(style, this.shadow.firstChild);
     this.hideContent();
-  }
-
-  mount() {
-    this.render(this.content);
-    this.addStylesheet();
-    this.renderLogic();
-    this.clean();
   }
 }
 

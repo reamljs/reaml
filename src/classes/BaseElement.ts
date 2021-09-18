@@ -9,6 +9,8 @@ import {
   createTag,
   copyAttrs,
 } from "@utils/node";
+import { createArray } from "@utils/data";
+import { addREAMLFn } from "@utils/reaml";
 
 type ObserverCallback = (data?: any) => void;
 
@@ -27,17 +29,37 @@ type CrateDeepElementOptions = Omit<CreateElementOptions, "elementTag"> & {
   };
 };
 
+type Observer = [
+  eventType: EventTypes,
+  eventTarget: EventTarget,
+  callback: () => void
+];
+
 class BaseElement extends HTMLElement {
   renderAs: string | undefined;
   shadow: ShadowRoot;
   statesName: string = Attributes.States;
+  observers: Observer[];
 
   constructor(statesName?: string, mode: ShadowRootMode = "closed") {
     super();
-    if (statesName) {
-      this.setStatesName(statesName);
-    }
+    this.observers = [];
+    if (statesName) this.setStatesName(statesName);
     this.shadow = this.attachShadow({ mode });
+  }
+
+  disconnectedCallback() {
+    if (this.parentNode) {
+      Array.from(this.parentNode.children).forEach((node) => {
+        if (node.isSameNode(this)) {
+          // @ts-ignore
+          node = null;
+        }
+      });
+    }
+    this.observers.forEach(([eventType, eventTarget, callback]) => {
+      (eventTarget || document).removeEventListener(eventType, callback);
+    });
   }
 
   setStatesName(statesName: string = Attributes.States) {
@@ -68,9 +90,46 @@ class BaseElement extends HTMLElement {
     fn: ObserverCallback,
     eventTarget: EventTarget = document
   ) {
-    (eventTarget || document).addEventListener(eventType, (object?: any) => {
+    const callback = (object?: any) => {
       fn(object?.detail);
+    };
+
+    (eventTarget || document).addEventListener(eventType, callback);
+    this.observers.push([eventType, eventTarget, callback]);
+  }
+
+  cloneElement(
+    element: Element | ShadowRoot,
+    selector: string,
+    isRemoveNode?: boolean
+  ) {
+    const getElement = (element: ShadowRoot | Element | Document) =>
+      element.querySelectorAll(selector);
+
+    const removeElement = (element: Element) => {
+      element.remove();
+    };
+
+    const elements: [Element, Node[]][] = [];
+    getElement(element).forEach((node) => {
+      const temp = createTag(selector);
+      const scripts: Node[] = [];
+      createArray<HTMLScriptElement>(querySelectorAll(node, "script")).forEach(
+        (item) => {
+          console.log(item.textContent);
+          scripts.push(item.cloneNode());
+          item.remove();
+        }
+      );
+      setHTML(temp, getHTML(node));
+      copyAttrs(node, temp);
+      getElement(temp).forEach(removeElement);
+      elements.push([temp, scripts]);
+      // @ts-ignore
+      removeElement(node);
     });
+
+    return elements;
   }
 
   createDeepElement({
@@ -79,25 +138,21 @@ class BaseElement extends HTMLElement {
     elementClass,
     iteratorCallback = () => ({ tag: undefined }),
   }: CrateDeepElementOptions) {
-    const getElement = (element: ShadowRoot | Element | Document) =>
-      element.querySelectorAll(elementSelector);
+    const elements = this.cloneElement(
+      this.shadow,
+      elementSelector,
+      isRemoveNode
+    );
 
-    const removeElement = (element: Element) => {
-      element.remove();
-    };
-
-    getElement(this.shadow).forEach((node) => {
-      if (isRemoveNode) {
-        getElement(node).forEach(removeElement);
-      }
-
-      const args = iteratorCallback(node);
+    elements.forEach(([element, scripts]) => {
+      const args = iteratorCallback(element);
       if (!args.elementTag) return;
 
       const elementTag = args.elementTag;
       delete args.elementTag;
 
       if (!customElements.get(elementTag)) {
+        args.scripts = scripts;
         createElement(
           elementTag,
           class extends elementClass {
@@ -109,7 +164,8 @@ class BaseElement extends HTMLElement {
       }
 
       if (isRemoveNode) {
-        removeElement(node);
+        // @ts-ignore
+        element = null;
       }
     });
   }
@@ -127,7 +183,7 @@ class BaseElement extends HTMLElement {
       copyAttrs(node, element);
       setHTML(element, getHTML(node));
       node.parentNode?.replaceChild(element, node);
-      node.parentNode?.removeChild(node);
+      node.remove();
     });
 
     createElement(

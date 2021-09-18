@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "tsc && vite build --watch",
     "build": "tsc && vite build",
-    "serve": "vite serve"
+    "serve": "vite serve",
+    "serve2": "npx serve . -p 3001"
   },
   "devDependencies": {
     "@types/node": "^16.7.5",

@@ -1,21 +1,31 @@
 import { CustomElement, EventTypes, Attributes } from "@utils/const";
 import { getAttrList, getAttr, getHTML } from "@utils/node";
 import { createObserver } from "@utils/state";
+import { randomId } from "@utils/data";
+import { global } from "@utils/helpers";
 import BaseElement from "@classes/BaseElement";
 import DefineComponent from "@classes/DefineComponent";
 import StatesComponent from "@classes/StatesComponent";
 import IfLogicComponent from "@classes/IfLogicComponent";
 
 class WebApp extends BaseElement {
+  id: string;
+
   constructor() {
     super();
-    this.setStatesName(this.getOriginStatesName());
+    this.id = randomId();
   }
 
   connectedCallback() {
-    this.createObservableStates();
     this.mount();
     this.registerElements();
+  }
+
+  mount() {
+    this.setStatesName(this.getOriginStatesName());
+    this.setAttribute(Attributes.Id, this.id);
+    this.createObservableStates();
+    super.mount();
   }
 
   getOriginStatesName() {
@@ -24,11 +34,12 @@ class WebApp extends BaseElement {
 
   createObservableStates() {
     const statesName = this.getOriginStatesName();
-    (<any>window)[statesName] = createObserver((<any>window)[statesName], () =>
-      document.dispatchEvent(event)
+    global(
+      statesName,
+      createObserver(global(statesName), () => document.dispatchEvent(event))
     );
     const event = new CustomEvent(EventTypes.StatesUpdate, {
-      detail: (<any>window)[statesName],
+      detail: global(statesName),
     });
   }
 

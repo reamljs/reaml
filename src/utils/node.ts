@@ -2,9 +2,10 @@ import { createArray } from "@utils/data";
 
 export const createElement = (
   name: string,
-  elementClass: CustomElementConstructor
+  elementClass: CustomElementConstructor,
+  options: ElementDefinitionOptions = {}
 ) => {
-  customElements.define(name, elementClass);
+  customElements.define(name, elementClass, options);
 };
 
 export const getNodeName = (node: Node | Attr) => node.nodeName;

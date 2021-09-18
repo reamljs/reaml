@@ -1,7 +1,7 @@
 import { Attributes, EventTypes } from "@utils/const";
 import { getStates } from "@utils/state";
 import { getContent } from "@utils/node";
-import { renderValueAs } from "@utils/fn";
+import { renderValueAs } from "@utils/helpers";
 import BaseElement from "@classes/BaseElement";
 import { IDefineComponent } from "@classes/DefineComponent";
 
@@ -26,7 +26,12 @@ class PropsComponent extends BaseElement {
 
   connectedCallback() {
     this.initialValue = getContent(this);
+    this.addObservsers();
     this.parseRenderer();
+    this.mount();
+  }
+
+  addObservsers() {
     this.addVarsObserver(
       EventTypes.PropsUpdate,
       (props) => {
@@ -35,7 +40,12 @@ class PropsComponent extends BaseElement {
       },
       <EventTarget>this.elementHost
     );
-    this.mount();
+  }
+
+  mount() {
+    this.render();
+    this.setAttribute(Attributes.Value, this.initialValue);
+    this.clean();
   }
 
   render() {
@@ -48,12 +58,6 @@ class PropsComponent extends BaseElement {
     const textNode = document.createTextNode(value);
     this.shadow.firstChild?.remove();
     this.shadow.appendChild(textNode);
-  }
-
-  mount() {
-    this.render();
-    this.setAttribute(Attributes.Value, this.initialValue);
-    this.clean();
   }
 }
 

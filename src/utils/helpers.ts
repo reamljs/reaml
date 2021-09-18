@@ -13,3 +13,14 @@ export const callCode = (thisArgs: any, codes: string[], execute?: boolean) => {
   if (!execute) return fn;
   return fn();
 };
+
+export const global = <T>(
+  key: any,
+  value?: any
+): Window & typeof globalThis & T => {
+  if (value) {
+    window[key] = value;
+  }
+
+  return <Window & typeof globalThis & T>window[key];
+};

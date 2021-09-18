@@ -1,8 +1,11 @@
 export enum Attributes {
   Component = "component",
+  OnUpdates = "onupdates",
+  OnMounted = "onmount",
   PropsPrefix = "props:",
   States = "states",
   Value = "value",
+  Id = "id",
 }
 
 export enum EventTypes {

@@ -1,3 +1,5 @@
+import { global } from "@utils//helpers";
+
 const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   const travel = (regexp: RegExp) =>
     String.prototype.split
@@ -19,13 +21,13 @@ export const getSafeStates = (name: string, states: any, path: string) =>
 
 export const getSafeGlobalStates = (statesName: string, path: string) => {
   const states = Object.freeze({
-    [statesName]: (<any>window)[statesName],
+    [statesName]: global(statesName),
   });
   return !path ? states : baseGet(states, path);
 };
 
 export const getGlobalStates = (statesName: string, path: string) => {
-  const states = (<any>window)[statesName];
+  const states = global(statesName);
   return !path ? states : baseGet(states, path);
 };
 
@@ -34,10 +36,10 @@ export const getGlobalStatesDefault = (statesName: string, path: string) => {
   return ![null, undefined].includes(value) ? value : path;
 };
 
-export const createObserver = (
+export const createObserver = <T>(
   states: any,
   onChange: (key: string, value: any) => void = () => {}
-) => {
+): T => {
   const validator = {
     get: (target: any, key: string) => {
       let value = target[key];

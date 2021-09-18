@@ -1,7 +1,7 @@
 import { EventTypes, Attributes } from "@utils/const";
 import { getGlobalStates, getStates } from "@utils/state";
 import { getContent } from "@utils/node";
-import { renderValueAs } from "@utils/fn";
+import { renderValueAs } from "@utils/helpers";
 import BaseElement from "@classes/BaseElement";
 
 class StatesComponent extends BaseElement {
@@ -14,10 +14,20 @@ class StatesComponent extends BaseElement {
 
   connectedCallback() {
     this.parseRenderer();
+    this.addObservers();
+    this.mount();
+  }
+
+  addObservers() {
     this.addVarsObserver(EventTypes.StatesUpdate, (states) =>
       this.render(states)
     );
-    this.mount();
+  }
+
+  mount() {
+    this.render();
+    this.setAttribute(Attributes.Value, this.initialValue);
+    this.clean();
   }
 
   render(states?: any) {
@@ -32,12 +42,6 @@ class StatesComponent extends BaseElement {
     const textNode = document.createTextNode(value);
     this.shadow.firstChild?.remove();
     this.shadow.appendChild(textNode);
-  }
-
-  mount() {
-    this.render();
-    this.setAttribute(Attributes.Value, this.initialValue);
-    this.clean();
   }
 }
 
