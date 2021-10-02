@@ -28,7 +28,7 @@ module.exports = defineConfig({
         properties: {
           builtins: true,
           regex:
-            /mount|createPropsObserver|listenObserver|appendScripts|initProps|updateProps|removeUnusedProps|invokeUpdate|props|createStatesObserver|registerStateComponent|registerDefineComponents|getStatesName|statesName|scripts|Component|States|StatesUpdate|PropsUpdate|Main|StatesComponent|PropsComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|Script|createObserver/,
+            /mount|createPropsObserver|listenObserver|appendScripts|initProps|updateProps|removeUnusedProps|invokeUpdate|props|createStatesObserver|registerStateComponent|registerDefineComponents|getStatesName|statesName|scripts|Component|States|StatesUpdate|PropsUpdate|Main|StatesComponent|PropsComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|Script|createObserver|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|FreeCondition|logicLexer|initLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|isRender|render|proxyProps|defaultProps|cond|initDefaultProps|statesPath|attrValue/,
         },
       },
     },

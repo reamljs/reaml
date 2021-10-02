@@ -7,8 +7,16 @@ type ReamlObject = {
   };
 };
 
+type CreateFnOptions = {
+  createFnName: GlobalFunction;
+  componentId?: string;
+  componentName: string;
+  defineFn?: boolean;
+};
+
 export enum GlobalFunction {
   createObserver = "createObserver",
+  createRef = "createRef",
 }
 
 const REAMLGlobalObjectName = "$$REAML";
@@ -20,23 +28,43 @@ export const createREAMLObject = () =>
 
 export const getREAMLObject = () => global<ReamlObject>(REAMLGlobalObjectName);
 
-export const createObserverFn = (
-  componentId?: string,
-  componentName: string = ""
-) => {
-  const observerName = `__${GlobalFunction.createObserver}\$${camelCase(
+export const createFn = ({
+  createFnName,
+  componentId,
+  componentName = "",
+  defineFn = true,
+}: CreateFnOptions) => {
+  const generatedName = `__${createFnName}\$${camelCase(
     componentName + componentId
   )}`;
-  const fnName = !componentName ? GlobalFunction.createObserver : observerName;
-  global(fnName, (fn: (states: any, props: any) => void) => {
-    if (!componentId) return;
-    const reaml = getREAMLObject();
-    if (!componentName) return;
-    if (!reaml.fx[componentName]) {
-      reaml.fx[componentName] = [];
-    }
 
-    reaml.fx[componentName].push([componentId, fn]);
-  });
-  return observerName;
+  const fnName = !componentName ? createFnName : generatedName;
+
+  if (defineFn) {
+    global(fnName, (fn: (...args: any) => void) => {
+      if (!componentId) return;
+
+      const reaml = getREAMLObject();
+      if (!componentName) return;
+      if (!reaml.fx[componentName]) reaml.fx[componentName] = [];
+      reaml.fx[componentName].push([componentId, fn]);
+    });
+  }
+
+  return fnName;
 };
+
+export const createObserverFn = (componentId?: string, componentName = "") =>
+  createFn({
+    createFnName: GlobalFunction.createObserver,
+    componentId,
+    componentName,
+  });
+
+export const createRefFn = (componentId?: string, componentName: string = "") =>
+  createFn({
+    createFnName: GlobalFunction.createRef,
+    componentId,
+    componentName,
+    defineFn: false,
+  });

@@ -1,10 +1,10 @@
 export const parseValue = (value: any) => {
-  const isNumber = parseInt(value) || parseFloat(value);
+  const isNumber = !isNaN(parseInt(value) || parseFloat(value));
   const isBoolean = ["true", "false"].includes(value);
   const isNull = value === "null";
   const isUndefined = value === "undefined";
-  const isNonString = isNumber || isBoolean || isNull || isUndefined;
-  return isNonString ? JSON.parse(`${value}`) : value;
+  const isString = !(isNumber || isBoolean || isNull || isUndefined);
+  return isString ? value : JSON.parse(`${value}`);
 };
 
 export const toPrimitiveObject = (anything: any) =>

@@ -1,8 +1,11 @@
 export enum Attributes {
+  RenderAs = "as",
   Component = "component",
   States = "states",
   Value = "value",
   Id = "id",
+  Module = "module",
+  Src = "src",
 }
 
 export enum EventTypes {

@@ -1,12 +1,19 @@
 import { Attributes, ElementTag, EventTypes } from "@utils/const";
 import {
+  copyAttrs,
   createElement,
+  createTag,
   getAttr,
   getAttrList,
   getHTML,
+  getContent,
   querySelectorAll,
+  setAttr,
+  setHTML,
 } from "@utils/node";
-import createDefineComponentd from "@classes/DefineComponent";
+import createStateComponent from "@classes/StatesComponent";
+import createIfLogicComponent from "@classes/IfLogicComponent";
+import createDefineComponent from "@classes/DefineComponent";
 import { createArray } from "@utils/data";
 import { global } from "@utils/helpers";
 import { createObserver } from "@utils/state";
@@ -18,7 +25,7 @@ export default class extends HTMLElement {
 
   connectedCallback() {
     this.createStatesObserver();
-    this.registerStateComponent();
+    this.registerStaticComponents();
     this.registerDefineComponents();
   }
 
@@ -37,7 +44,35 @@ export default class extends HTMLElement {
     );
   }
 
-  registerStateComponent() {}
+  registerStaticComponents() {
+    const args = {
+      statesName: this.getStatesName(),
+    };
+
+    (<[elementTag: string, fn: Function, classOptions: any][]>[
+      [ElementTag.StatesComponent, createStateComponent, args],
+      [ElementTag.IfLogicComponent, createIfLogicComponent, args],
+    ]).forEach(([tagName, fn, args]) => {
+      const componentTag = `${tagName}-${Attributes.Component}`;
+      createElement(componentTag, fn(args));
+
+      createArray<Element>(querySelectorAll(this, tagName)).forEach((node) => {
+        const component = createTag(componentTag);
+        copyAttrs(node, component);
+
+        if (tagName === ElementTag.StatesComponent) {
+          const text = getContent(node);
+          if (text) setAttr(component, Attributes.Value, text);
+        }
+
+        if (tagName === ElementTag.IfLogicComponent) {
+          setHTML(component, getHTML(node));
+        }
+
+        node.replaceWith(component);
+      });
+    });
+  }
 
   registerDefineComponents() {
     const removeNode = (node: Element) => {
@@ -73,7 +108,7 @@ export default class extends HTMLElement {
     nodes.forEach(([componentName, attributes, node, scripts]) => {
       createElement(
         componentName,
-        createDefineComponentd({
+        createDefineComponent({
           name: componentName,
           statesName: this.getStatesName(),
           html: getHTML(node),

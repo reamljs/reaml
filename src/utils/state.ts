@@ -1,4 +1,5 @@
 import { global } from "@utils//helpers";
+import { EventTypes } from "./const";
 
 const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -65,3 +66,8 @@ export const createObserver = <T>(
 
   return new Proxy(states, validator);
 };
+
+export const listenStates = (
+  statesName: string,
+  fn: EventListenerOrEventListenerObject
+) => document.addEventListener(`${EventTypes.StatesUpdate}-${statesName}`, fn);

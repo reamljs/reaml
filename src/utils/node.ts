@@ -8,9 +8,9 @@ export const createElement = (
   customElements.define(name, elementClass, options);
 };
 
-export const getNodeName = (node: Node | Attr) => node.nodeName;
+export const getNodeName = (node: Attr) => node.name;
 
-export const getNodeValue = (node: Node | Attr) => node.nodeValue;
+export const getNodeValue = (node: Attr) => node.value;
 
 export const getAttrList = (element: Element) => element.attributes;
 
@@ -19,8 +19,13 @@ export const getAttr = (element: Element, attrName: string): string =>
 
 export const getHTML = (element: Element) => element.innerHTML;
 
-export const getContent = (element: Element) =>
+export const getContent = (element: Element | ShadowRoot) =>
   element.textContent?.trim() ?? "";
+
+export const setContent = (
+  element: Element | ShadowRoot,
+  content: string = ""
+) => (element.textContent = content);
 
 export const setHTML = (
   element: Element | ShadowRoot,
@@ -29,7 +34,8 @@ export const setHTML = (
   element.innerHTML = content;
 };
 
-export const cleanHTML = (element: Element | ShadowRoot) => setHTML(element);
+export const cleanHTML = (element: Element | ShadowRoot) =>
+  setHTML(element, "");
 
 export const querySelectorAll = (
   element: Element | ShadowRoot,
@@ -57,6 +63,11 @@ export const copyAttrs = (
   createArray<Attr>(attrs).forEach((attr) => {
     const nodeName = getNodeName(attr);
     const nodeValue = getNodeValue(attr);
-    setAttr(toElement, getNodeName(attr), nodeValue ? nodeValue : nodeName);
+    setAttr(toElement, nodeName, nodeValue || nodeName);
   });
 };
+
+export const attachShadow = (
+  element: Element,
+  mode: ShadowRootMode = "closed"
+) => element.attachShadow({ mode });
