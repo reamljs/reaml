@@ -1,121 +1,125 @@
-import { Attributes, ElementTag, EventTypes } from "@utils/const";
+import { Attributes, ElementTag } from "@utils/const";
 import {
   copyAttrs,
   createElement,
   createTag,
   getAttr,
   getAttrList,
-  getHTML,
   getContent,
+  getHTML,
   querySelectorAll,
+  removeNode,
   setAttr,
   setHTML,
 } from "@utils/node";
 import createStateComponent from "@classes/StatesComponent";
-import createIfLogicComponent from "@classes/IfLogicComponent";
+// import createIfLogicComponent from "@classes/IfLogicComponent";
+import createDefineState from "@classes/DefineState";
 import createDefineComponent from "@classes/DefineComponent";
 import { createArray } from "@utils/data";
-import { global } from "@utils/helpers";
-import { createObserver } from "@utils/state";
+import Reaml from "@classes/Reaml";
 
-export default class extends HTMLElement {
-  constructor() {
-    super();
-  }
+export default function createApp() {
+  createElement(
+    ElementTag.Main,
+    class extends HTMLElement {
+      constructor() {
+        super();
+        Reaml.init();
 
-  connectedCallback() {
-    this.createStatesObserver();
-    this.registerStaticComponents();
-    this.registerDefineComponents();
-  }
+        if (!getAttr(this, Attributes.AppName))
+          throw new Error("Invalid `web-app` component. App name is required.");
+      }
 
-  getStatesName() {
-    return getAttr(this, Attributes.States) || Attributes.States;
-  }
+      connectedCallback() {
+        this.registerStaticComponent();
+        this.registerDefineComponents();
+        this.mount();
+      }
 
-  createStatesObserver() {
-    const statesName = this.getStatesName();
-    const event = new CustomEvent(`${EventTypes.StatesUpdate}-${statesName}`, {
-      detail: global(statesName),
-    });
-    global(
-      statesName,
-      createObserver(global(statesName), () => document.dispatchEvent(event))
-    );
-  }
+      registerStaticComponent() {
+        const args = {};
 
-  registerStaticComponents() {
-    const args = {
-      statesName: this.getStatesName(),
-    };
+        (<[elementTag: string, fn: Function, classOptions: any][]>[
+          [ElementTag.StatesComponent, createStateComponent, args],
+          // [ElementTag.IfLogicComponent, createIfLogicComponent, args],
+        ]).forEach(([tagName, fn, args]) => {
+          const componentTag = `${tagName}-${Attributes.Component}`;
+          createElement(componentTag, fn(args));
 
-    (<[elementTag: string, fn: Function, classOptions: any][]>[
-      [ElementTag.StatesComponent, createStateComponent, args],
-      [ElementTag.IfLogicComponent, createIfLogicComponent, args],
-    ]).forEach(([tagName, fn, args]) => {
-      const componentTag = `${tagName}-${Attributes.Component}`;
-      createElement(componentTag, fn(args));
+          createArray<Element>(querySelectorAll(this, tagName)).forEach(
+            (node) => {
+              const component = createTag(componentTag);
+              copyAttrs(node, component);
 
-      createArray<Element>(querySelectorAll(this, tagName)).forEach((node) => {
-        const component = createTag(componentTag);
-        copyAttrs(node, component);
+              if (tagName === ElementTag.StatesComponent) {
+                const text = getContent(node);
+                if (text) setAttr(component, Attributes.Value, text);
+              }
 
-        if (tagName === ElementTag.StatesComponent) {
-          const text = getContent(node);
-          if (text) setAttr(component, Attributes.Value, text);
-        }
+              if (tagName === ElementTag.IfLogicComponent) {
+                setHTML(component, getHTML(node));
+              }
 
-        if (tagName === ElementTag.IfLogicComponent) {
-          setHTML(component, getHTML(node));
-        }
+              node.replaceWith(component);
+            }
+          );
+        });
+      }
 
-        node.replaceWith(component);
-      });
-    });
-  }
+      registerDefineComponents() {
+        const nodes: [
+          node: Element,
+          defineType: Attributes.State | Attributes.Component,
+          componentTagOrStateName: string,
+          attributes: NamedNodeMap
+        ][] = [];
 
-  registerDefineComponents() {
-    const removeNode = (node: Element) => {
-      node.remove();
-      // @ts-ignore
-      node = null;
-    };
+        createArray<Element>(
+          querySelectorAll(this, ElementTag.DefineComponent)
+        ).forEach((node) => {
+          const componentAttr = getAttr(node, Attributes.Component);
+          const stateAttr = getAttr(node, Attributes.State);
+          if (!componentAttr && !stateAttr) return;
 
-    const nodes: [
-      componentName: string,
-      attributes: NamedNodeMap,
-      node: Element,
-      scripts: Element[]
-    ][] = [];
+          const defineType = componentAttr
+            ? Attributes.Component
+            : Attributes.State;
+          const componentTagOrStateName = componentAttr || stateAttr;
+          const attributes = getAttrList(node);
+          nodes.push([node, defineType, componentTagOrStateName, attributes]);
+        });
 
-    createArray<Element>(
-      querySelectorAll(this, ElementTag.DefineComponent)
-    ).forEach((node) => {
-      const tagName = getAttr(node, Attributes.Component);
-      if (!tagName) return;
+        nodes.forEach(([node, defineType, name, attributes]) => {
+          const content = getHTML(node);
 
-      const attributes = getAttrList(node);
-      const scripts: Element[] = [];
-      querySelectorAll(node, ElementTag.DefineComponent).forEach(removeNode);
-      querySelectorAll(node, ElementTag.Script).forEach((script) => {
-        scripts.push(script);
-        removeNode(script);
-      });
-      nodes.push([tagName.toLowerCase(), attributes, node, scripts]);
-      removeNode(node);
-    });
+          switch (defineType) {
+            case Attributes.Component:
+              createElement(
+                name,
+                createDefineComponent({
+                  name,
+                  html: content,
+                  attributes,
+                })
+              );
+              removeNode(node);
+              break;
 
-    nodes.forEach(([componentName, attributes, node, scripts]) => {
-      createElement(
-        componentName,
-        createDefineComponent({
-          name: componentName,
-          statesName: this.getStatesName(),
-          html: getHTML(node),
-          attributes,
-          scripts,
-        })
-      );
-    });
-  }
+            case Attributes.State:
+              createDefineState({
+                name,
+                node,
+                content,
+              });
+              break;
+          }
+        });
+      }
+
+      mount() {
+        Reaml.isReady();
+      }
+    }
+  );
 }

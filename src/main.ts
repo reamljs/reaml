@@ -1,10 +1,8 @@
-import { createElement } from "@utils/node";
-import { ElementTag } from "@utils/const";
-import { createREAMLObject, createObserverFn, createRefFn } from "@utils/reaml";
-import { global } from "@utils/helpers";
-import WebApp from "@classes/WebApp";
+import createApp from "@classes/WebApp";
+import Reaml from "@classes/Reaml";
 
-createREAMLObject();
-global(createRefFn(), () => null);
-createObserverFn();
-createElement(ElementTag.Main, WebApp);
+createApp();
+
+export default {
+  ready: Reaml.ready,
+};

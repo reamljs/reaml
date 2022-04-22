@@ -1,5 +1,5 @@
 import { global } from "@utils//helpers";
-import { EventTypes } from "./const";
+import { EventTypes } from "@utils/const";
 
 const baseGet = (obj: any, path: string, defaultValue = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -46,20 +46,24 @@ export const getGlobalStatesDefault = (statesName: string, path: string) => {
 
 export const createObserver = <T>(
   states: any,
-  onChange: (key: string, value: any) => void = () => {}
+  onChange: (key: string, prevValue: any, nextValue: any) => void = () => {}
+  // host?: Element | ShadowRoot
 ): T => {
-  const validator = {
-    get: (target: any, key: string) => {
+  const validator: ProxyHandler<object> = {
+    get(target: any, key: string) {
       let value = target[key];
       if (typeof value === "object" && !Array.isArray(value)) {
         value = createObserver(value, onChange);
       }
+
       return value;
     },
 
-    set: (_: any, key: string, value: any) => {
+    set(target: any, key: string, value) {
+      const prevValue = Object.freeze(Object.assign({}, target));
       states[key] = value;
-      onChange(key, value);
+      const nextValue = states;
+      onChange(key, prevValue, nextValue);
       return true;
     },
   };
@@ -68,6 +72,7 @@ export const createObserver = <T>(
 };
 
 export const listenStates = (
+  element: Element | Document = document,
   statesName: string,
   fn: EventListenerOrEventListenerObject
-) => document.addEventListener(`${EventTypes.StatesUpdate}-${statesName}`, fn);
+) => element.addEventListener(`${EventTypes.StatesUpdate}-${statesName}`, fn);

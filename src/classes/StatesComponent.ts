@@ -1,39 +1,56 @@
 import { Attributes } from "@utils/const";
 import { global, renderValueAs } from "@utils/helpers";
-import { attachShadow, getAttr, getContent, setContent } from "@utils/node";
-import { getStates, listenStates } from "@utils/state";
+import {
+  attachShadow,
+  getAttr,
+  getContent,
+  renderOnConnected,
+  setContent,
+} from "@utils/node";
+import { getStates } from "@utils/state";
+import Reaml, { StateObserverFn } from "@classes/Reaml";
 
-type StatesComponentOptions = {
-  statesName: string;
-};
+const DOT_NOTATION = ".";
 
-export default ({ statesName }: StatesComponentOptions) => {
+export default () => {
+  const shadowRoots = new WeakMap();
+
   return class extends HTMLElement {
+    stateName: string = "";
     statesPath: string = "";
     renderAs: string = "";
-    shadow: ShadowRoot;
 
     constructor() {
       super();
-      this.shadow = attachShadow(this);
+      shadowRoots.set(this, attachShadow(this));
     }
 
     connectedCallback() {
-      this.renderAs = getAttr(this, Attributes.RenderAs);
-      this.statesPath = getAttr(this, Attributes.Value);
-      this.listenObserver();
+      this.init();
       this.mount();
     }
 
-    listenObserver() {
-      listenStates(statesName, (data) => {
-        if (!this.isConnected) return;
-        this.render((<any>data)?.detail);
-      });
+    init() {
+      const value = getAttr(this, Attributes.Value);
+      const [stateName, ...statesPath] = value.split(DOT_NOTATION);
+      this.stateName = stateName;
+      this.statesPath = statesPath.join(DOT_NOTATION);
+      this.renderAs = getAttr(this, Attributes.RenderAs);
+    }
+
+    listenStateObserver() {
+      const observer = global<(fn: StateObserverFn) => void>(
+        Reaml.getObserverName(this.stateName, true)
+      );
+
+      observer?.((_: any, states: any) => this.render(states));
     }
 
     mount() {
-      this.render(global(statesName));
+      renderOnConnected(this, () => {
+        this.listenStateObserver();
+        this.render(global(this.stateName));
+      });
     }
 
     render(states?: any) {
@@ -42,10 +59,11 @@ export default ({ statesName }: StatesComponentOptions) => {
         nextValue = renderValueAs(nextValue, this.renderAs);
       }
 
-      const prevValue = getContent(this.shadow);
+      const shadow = shadowRoots.get(this);
+      const prevValue = getContent(shadow);
       if (prevValue === nextValue) return;
 
-      setContent(this.shadow, nextValue);
+      setContent(shadow, nextValue);
     }
   };
 };

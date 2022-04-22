@@ -38,9 +38,9 @@ export const cleanHTML = (element: Element | ShadowRoot) =>
   setHTML(element, "");
 
 export const querySelectorAll = (
-  element: Element | ShadowRoot,
+  element: Element | HTMLScriptElement | ShadowRoot | null,
   selector: string
-) => element.querySelectorAll(selector);
+) => (element || document).querySelectorAll(selector);
 
 export const createTag = (tagName: string) => document.createElement(tagName);
 
@@ -71,3 +71,16 @@ export const attachShadow = (
   element: Element,
   mode: ShadowRootMode = "closed"
 ) => element.attachShadow({ mode });
+
+export const renderOnConnected = (node: Element, render: () => void) => {
+  requestAnimationFrame(() => {
+    if (!node.isConnected) return;
+    render();
+  });
+};
+
+export const removeNode = (node: Element) => {
+  node.remove();
+  // @ts-ignore
+  node = null;
+};
