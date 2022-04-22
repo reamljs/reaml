@@ -1,8 +1,15 @@
-import createApp from "@classes/WebApp";
-import Reaml from "@classes/Reaml";
+import Realm from '@classes/Realm'
+import registerDefineComponent from "@classes/DefineComponent";
+import registerWebApp from "@classes/WebApp";
 
-createApp();
+registerDefineComponent();
+registerWebApp()
 
-export default {
-  ready: Reaml.ready,
-};
+const realm = new Realm();
+realm.init();
+
+if (window) {
+  (<any>window).realm = realm;
+}
+
+export default realm;

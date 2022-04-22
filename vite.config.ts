@@ -10,27 +10,27 @@ module.exports = defineConfig({
       name: "Reaml",
       fileName: () => `reaml.js`,
     },
-    terserOptions: {
-      compress: {
-        ecma: 2019,
-        booleans_as_integers: true,
-        keep_fargs: false,
-        module: true,
-        passes: 10,
-        unsafe_arrows: true,
-        unsafe_undefined: true,
-        unsafe_proto: true,
-        unsafe_regexp: true,
-      },
-      mangle: {
-        toplevel: true,
-        properties: {
-          builtins: true,
-          regex:
-            /mount|createPropsObserver|listenObserver|appendScripts|initProps|updateProps|removeUnusedProps|invokeUpdate|props|createStatesObserver|registerStateComponent|registerDefineComponents|getAppName|statesName|scripts|Component|States|StatesUpdate|PropsUpdate|Main|StatesComponent|PropsComponent|DefineComponent|ImportComponent|IfLogicComponent|ForLogicComponent|LoopComponent|MatchLogicComponent|Script|createObserver|Equal|NotEqual|GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual|FreeCondition|logicLexer|initLogic|getStyletag|overridesStyles|showContent|hideContent|addStylesheet|isRender|render|proxyProps|defaultProps|cond|initDefaultProps|statesPath|attrValue/,
-        },
-      },
-    },
+  //   terserOptions: {
+  //     compress: {
+  //       ecma: 2019,
+  //       booleans_as_integers: true,
+  //       keep_fargs: false,
+  //       module: true,
+  //       passes: 10,
+  //       unsafe_arrows: true,
+  //       unsafe_undefined: true,
+  //       unsafe_proto: true,
+  //       unsafe_regexp: true,
+  //     },
+  //     mangle: {
+  //       toplevel: true,
+  //       // properties: {
+  //       //   builtins: true,
+  //       //   // regex:
+  //       //   //   //g,
+  //       // },
+  //     },
+  //   },
   },
   publicDir: path.resolve(__dirname, "dist"),
 });
