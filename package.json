@@ -1,7 +1,17 @@
 {
+  "name": "test",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "tsc && vite build --watch",
+    "build": "tsc && vite build",
+    "serve": "vite serve",
+    "serve2": "npx serve . -p 3001"
+  },
   "devDependencies": {
-    "@swc/cli": "^0.1.49",
-    "@swc/core": "^1.2.80",
-    "chokidar": "^3.5.2"
-  }
+    "@types/node": "^16.7.5",
+    "typescript": "^4.3.2",
+    "vite": "^2.4.4",
+    "vite-tsconfig-paths": "^3.3.13"
+  },
+  "dependencies": {}
 }
